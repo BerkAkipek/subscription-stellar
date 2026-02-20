@@ -104,7 +104,7 @@ Core contract source:
 
 ## 1-Minute Demo Video
 
-- Video URL: `ADD_VIDEO_LINK_HERE`
+- Video URL: [Watch the 1-minute demo](https://www.loom.com/share/96419e34835643668225477a101b800e)
 
 ## License
 
