@@ -42,7 +42,10 @@ npm install
 ```bash
 cp .env.example .env
 ```
-Set `VITE_CONTRACT_ID` to your deployed Soroban contract ID.
+Set:
+- `VITE_SUBSCRIPTION_CONTRACT_ID`
+- `VITE_TOKENIZATION_CONTRACT_ID`
+- `VITE_BACKEND_URL`
 
 3. Run both apps from repo root:
 ```bash
@@ -109,7 +112,7 @@ Core contract source:
 ## Notes
 
 - This project targets Stellar testnet endpoints in current frontend code.
-- Keep `VITE_CONTRACT_ID` aligned with the deployed contract on the same network.
+- Keep `VITE_SUBSCRIPTION_CONTRACT_ID` and `VITE_TOKENIZATION_CONTRACT_ID` aligned with deployed contracts on the same network.
 
 ## 1-Minute Demo Video
 

@@ -6,6 +6,7 @@ import {
   BASE_FEE,
   xdr,
   rpc,
+  nativeToScVal,
 } from "stellar-sdk";
 
 import { wallet } from "@/wallet/manager";
@@ -14,10 +15,19 @@ const rpcServer = new rpc.Server(
   "https://soroban-testnet.stellar.org"
 );
 
-const CONTRACT_ID = import.meta.env.VITE_CONTRACT_ID;
+const SUBSCRIPTION_CONTRACT_ID =
+  import.meta.env.VITE_SUBSCRIPTION_CONTRACT_ID ??
+  import.meta.env.VITE_CONTRACT_ID;
+const TOKENIZATION_CONTRACT_ID =
+  import.meta.env.VITE_TOKENIZATION_CONTRACT_ID ??
+  import.meta.env.VITE_CONTRACT_ID;
 
-if (!CONTRACT_ID) {
-  throw new Error("Missing VITE_CONTRACT_ID in env");
+if (!SUBSCRIPTION_CONTRACT_ID) {
+  throw new Error("Missing VITE_SUBSCRIPTION_CONTRACT_ID in env");
+}
+
+if (!TOKENIZATION_CONTRACT_ID) {
+  throw new Error("Missing VITE_TOKENIZATION_CONTRACT_ID in env");
 }
 
 const NETWORK = Networks.TESTNET;
@@ -105,10 +115,11 @@ function decodeSubscription(val: any) {
 export async function subscribe(
   userAddress: string,
   planId: number,
-  durationSeconds: number
+  durationSeconds: number,
+  amount: number
 ) {
   const account = await rpcServer.getAccount(userAddress);
-  const contract = new Contract(CONTRACT_ID);
+  const contract = new Contract(SUBSCRIPTION_CONTRACT_ID);
 
   const tx = new TransactionBuilder(account, {
     fee: BASE_FEE,
@@ -121,7 +132,8 @@ export async function subscribe(
         xdr.ScVal.scvU32(planId),
         xdr.ScVal.scvU64(
           xdr.Uint64.fromString(durationSeconds.toString())
-        )
+        ),
+        nativeToScVal(amount.toString(), { type: "i128" })
       )
     )
     .setTimeout(60)
@@ -155,7 +167,7 @@ export async function subscribe(
 
 export async function getSubscription(userAddress: string) {
 
-  const contract = new Contract(CONTRACT_ID);
+  const contract = new Contract(SUBSCRIPTION_CONTRACT_ID);
 
   const account = await rpcServer.getAccount(userAddress);
 
@@ -182,4 +194,33 @@ export async function getSubscription(userAddress: string) {
   console.log("RETVAL RAW:", retval);
 
   return decodeSubscription(retval);
+}
+
+export async function getTokenBalance(userAddress: string): Promise<string | null> {
+  const contract = new Contract(TOKENIZATION_CONTRACT_ID);
+  const account = await rpcServer.getAccount(userAddress);
+
+  const tx = new TransactionBuilder(account, {
+    fee: BASE_FEE,
+    networkPassphrase: NETWORK,
+  })
+    .addOperation(
+      contract.call(
+        "balance",
+        Address.fromString(userAddress).toScVal()
+      )
+    )
+    .setTimeout(60)
+    .build();
+
+  const sim = await rpcServer.simulateTransaction(tx);
+  const retval = (sim as any).result?.retval ?? (sim as any).retval;
+
+  if (!retval) return null;
+
+  try {
+    return retval.value().toString();
+  } catch {
+    return null;
+  }
 }

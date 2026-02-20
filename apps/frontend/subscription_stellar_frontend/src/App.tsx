@@ -2,15 +2,23 @@ import { useEffect, useMemo, useState } from "react";
 import { wallet } from "@/wallet/manager";
 import type { Balance } from "@/wallet/types";
 import { sendXLM } from "./lib/sendXLM";
-import { subscribe, getSubscription } from "@/contract/client";
+import { subscribe, getSubscription, getTokenBalance } from "@/contract/client";
 import { getCached, removeCached, setCached } from "@/lib/cache";
 import "./App.css";
 
 type AsyncStatus = "idle" | "loading" | "success" | "error";
 type SubscriptionView = { planId: number; expiresAt: number } | null;
+type BackendState = {
+  subscription: SubscriptionView;
+  tokenBalance: string;
+  recentEvents: unknown[];
+  observedAt: string;
+} | null;
 
 const BALANCE_CACHE_TTL_MS = 30_000;
 const SUBSCRIPTION_CACHE_TTL_MS = 15_000;
+const SUBSCRIPTION_PAYMENT_AMOUNT = 25;
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? "http://localhost:8080";
 
 function balanceCacheKey(address: string) {
   return `cache:balances:${address}`;
@@ -31,7 +39,9 @@ function App() {
   const [txHash, setTxHash] = useState<string | null>(null);
 
   const [balances, setBalances] = useState<Balance[]>([]);
+  const [tokenBalance, setTokenBalance] = useState<string | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionView>(null);
+  const [backendState, setBackendState] = useState<BackendState>(null);
   const [subscriptionProgress, setSubscriptionProgress] = useState(0);
   const [subscriptionStep, setSubscriptionStep] = useState("");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -48,6 +58,29 @@ function App() {
   function formatAddress(address: string) {
     if (address.length <= 12) return address;
     return `${address.slice(0, 6)}...${address.slice(-6)}`;
+  }
+
+  async function refreshBackendState(address: string) {
+    const res = await fetch(
+      `${BACKEND_URL}/api/state?user=${encodeURIComponent(address)}`
+    );
+    if (!res.ok) {
+      throw new Error(`Backend request failed: ${res.status}`);
+    }
+
+    const data = await res.json();
+    const normalized: BackendState = {
+      subscription: data.subscription ?? null,
+      tokenBalance: data.tokenBalance ?? "0",
+      recentEvents: Array.isArray(data.recentEvents) ? data.recentEvents : [],
+      observedAt: data.observedAt ?? "",
+    };
+
+    setBackendState(normalized);
+    if (normalized.subscription) {
+      setSubscription(normalized.subscription);
+    }
+    setTokenBalance(normalized.tokenBalance);
   }
 
 
@@ -136,7 +169,8 @@ function App() {
       const hash = await subscribe(
         publicKey,
         1,
-        3600
+        3600,
+        SUBSCRIPTION_PAYMENT_AMOUNT
       );
 
       console.log("Subscription tx:", hash);
@@ -160,7 +194,10 @@ function App() {
       );
 
       setSubscription(sub);
+      const token = await getTokenBalance(publicKey);
+      setTokenBalance(token);
       setCached(subscriptionCacheKey(publicKey), sub, SUBSCRIPTION_CACHE_TTL_MS);
+      await refreshBackendState(publicKey);
       setSubscribeStatus("success");
       setStatusMessage(
         sub ? "Subscription updated." : "No active subscription found yet."
@@ -214,6 +251,9 @@ function App() {
         const sub = await getSubscription(publicKey);
         setSubscription(sub);
         setCached(subscriptionCacheKey(publicKey), sub, SUBSCRIPTION_CACHE_TTL_MS);
+        const token = await getTokenBalance(publicKey);
+        setTokenBalance(token);
+        await refreshBackendState(publicKey);
         setLoadStatus("success");
         setStatusMessage("Wallet data loaded.");
 
@@ -239,6 +279,7 @@ function App() {
       setBalances([]);
       setSubscription(null);
       setTxHash(null);
+      setTokenBalance(null);
       setLoadStatus("idle");
       setConnectStatus("idle");
       setSendStatus("idle");
@@ -265,6 +306,18 @@ function App() {
 
     setCached(subscriptionCacheKey(publicKey), subscription, SUBSCRIPTION_CACHE_TTL_MS);
   }, [subscription, publicKey]);
+
+  useEffect(() => {
+    if (!publicKey) return;
+
+    const interval = setInterval(() => {
+      void refreshBackendState(publicKey).catch((e) => {
+        console.error("Backend refresh failed:", e);
+      });
+    }, 8000);
+
+    return () => clearInterval(interval);
+  }, [publicKey]);
 
 
   // ==============================
@@ -344,6 +397,9 @@ function App() {
           </p>
         ))}
 
+      <h2>Token Balance</h2>
+      <p>{tokenBalance ?? "N/A"}</p>
+
       {/* SUBSCRIPTION */}
       <h2>Subscription</h2>
 
@@ -355,6 +411,15 @@ function App() {
         <p>
           Plan: {subscription.planId} <br />
           Expires: {new Date(subscription.expiresAt * 1000).toLocaleString()}
+        </p>
+      )}
+
+      <h2>Backend State</h2>
+      {!backendState && <p>No backend state yet</p>}
+      {backendState && (
+        <p>
+          Observed: {backendState.observedAt || "n/a"} <br />
+          Recent events: {backendState.recentEvents.length}
         </p>
       )}
 

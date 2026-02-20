@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.stubEnv("VITE_SUBSCRIPTION_CONTRACT_ID", "TEST_SUBSCRIPTION_CONTRACT_ID");
+vi.stubEnv("VITE_TOKENIZATION_CONTRACT_ID", "TEST_TOKENIZATION_CONTRACT_ID");
 vi.stubEnv("VITE_CONTRACT_ID", "TEST_CONTRACT_ID");
 
 const {
@@ -10,6 +12,7 @@ const {
   mockScvU64,
   mockUint64FromString,
   mockFromXDR,
+  mockNativeToScVal,
 } = vi.hoisted(() => {
   const mockRpcServer = {
     getAccount: vi.fn(),
@@ -26,6 +29,7 @@ const {
     mockScvU64: vi.fn(),
     mockUint64FromString: vi.fn(),
     mockFromXDR: vi.fn(),
+    mockNativeToScVal: vi.fn(),
   };
 });
 
@@ -83,6 +87,7 @@ vi.mock("stellar-sdk", () => {
     rpc: {
       Server,
     },
+    nativeToScVal: mockNativeToScVal,
   };
 });
 
@@ -93,7 +98,7 @@ vi.mock("@/wallet/manager", () => ({
 }));
 
 import { wallet } from "@/wallet/manager";
-import { getSubscription, subscribe } from "@/contract/client";
+import { getSubscription, getTokenBalance, subscribe } from "@/contract/client";
 
 const mockWallet = wallet as unknown as {
   signTransaction: ReturnType<typeof vi.fn>;
@@ -118,6 +123,7 @@ describe("contract client", () => {
     mockScvU32.mockImplementation((v) => `U32_${v}`);
     mockUint64FromString.mockImplementation((v) => `U64_RAW_${v}`);
     mockScvU64.mockImplementation((v) => `U64_${v}`);
+    mockNativeToScVal.mockImplementation((v, t) => `SCVAL_${v}_${t.type}`);
 
     mockRpcServer.getAccount.mockResolvedValue({ id: "ACCOUNT" });
     mockRpcServer.prepareTransaction.mockResolvedValue({
@@ -132,14 +138,15 @@ describe("contract client", () => {
   it("subscribe builds/sends contract tx and returns hash", async () => {
     mockRpcServer.simulateTransaction.mockResolvedValue({ ok: true });
 
-    const hash = await subscribe("GUSER", 7, 3600);
+    const hash = await subscribe("GUSER", 7, 3600, 25);
 
     expect(mockRpcServer.getAccount).toHaveBeenCalledWith("GUSER");
     expect(mockCall).toHaveBeenCalledWith(
       "subscribe",
       "USER_SCVAL",
       "U32_7",
-      "U64_U64_RAW_3600"
+      "U64_U64_RAW_3600",
+      "SCVAL_25_i128"
     );
     expect(mockWallet.signTransaction).toHaveBeenCalledWith("PREPARED_XDR", {
       address: "GUSER",
@@ -208,6 +215,25 @@ describe("contract client", () => {
     });
 
     const result = await getSubscription("GUSER");
+
+    expect(result).toBeNull();
+  });
+
+  it("getTokenBalance calls token contract and returns decoded value", async () => {
+    mockRpcServer.simulateTransaction.mockResolvedValue({
+      result: { retval: scVal("scvI128", 975) },
+    });
+
+    const result = await getTokenBalance("GUSER");
+
+    expect(mockCall).toHaveBeenCalledWith("balance", "USER_SCVAL");
+    expect(result).toBe("975");
+  });
+
+  it("getTokenBalance returns null when simulation has no retval", async () => {
+    mockRpcServer.simulateTransaction.mockResolvedValue({ result: {} });
+
+    const result = await getTokenBalance("GUSER");
 
     expect(result).toBeNull();
   });

@@ -17,7 +17,9 @@ React + TypeScript + Vite frontend for wallet actions and Soroban subscription i
 Create `.env` in this folder:
 
 ```env
-VITE_CONTRACT_ID=YOUR_SOROBAN_CONTRACT_ID
+VITE_SUBSCRIPTION_CONTRACT_ID=YOUR_SUBSCRIPTION_CONTRACT_ID
+VITE_TOKENIZATION_CONTRACT_ID=YOUR_TOKENIZATION_CONTRACT_ID
+VITE_BACKEND_URL=http://localhost:8080
 ```
 
 You can copy the example:
@@ -54,8 +56,9 @@ Main contract client file:
 - `src/contract/client.ts`
 
 Exposed operations:
-- `subscribe(userAddress, planId, durationSeconds)`
+- `subscribe(userAddress, planId, durationSeconds, amount)`
 - `getSubscription(userAddress)`
+- `getTokenBalance(userAddress)`
 
 ## UX State Model
 
