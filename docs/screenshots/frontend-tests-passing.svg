@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1160" height="1316" viewBox="0 0 1160 1316" role="img" aria-label="Frontend test evidence">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#bg)"/>
+  <rect x="12" y="12" width="1136" height="1292" rx="12" fill="#020617" stroke="#334155"/>
+  <text font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace" font-size="16" fill="#e2e8f0" xml:space="preserve"><tspan x="28" y="58">Captured on: 2026-02-20 22:21:49 UTC</tspan>
+<tspan x="28" y="82">Frontend test files found:</tspan>
+<tspan x="28" y="106">tests/contract.client.test.ts</tspan>
+<tspan x="28" y="130">tests/lib/cache.test.ts</tspan>
+<tspan x="28" y="154">tests/lib/getBalance.test.ts</tspan>
+<tspan x="28" y="178">tests/lib/sendXLM.test.ts</tspan>
+<tspan x="28" y="202"> </tspan>
+<tspan x="28" y="226">Command run:</tspan>
+<tspan x="28" y="250">cd apps/frontend/subscription_stellar_frontend &amp;&amp; npm test -- --run</tspan>
+<tspan x="28" y="274"> </tspan>
+<tspan x="28" y="298"> </tspan>
+<tspan x="28" y="322">&gt; subscription_stellar_frontend@0.0.0 test</tspan>
+<tspan x="28" y="346">&gt; vitest --config vitest.config.ts --run</tspan>
+<tspan x="28" y="370"> </tspan>
+<tspan x="28" y="394"> </tspan>
+<tspan x="28" y="418"> RUN  v4.0.18 /home/berk/stellar-projects/subscrption_stellar/apps/frontend/subscription_stellar_frontend</tspan>
+<tspan x="28" y="442"> </tspan>
+<tspan x="28" y="466"> ✓ tests/lib/getBalance.test.ts (1 test) 4ms</tspan>
+<tspan x="28" y="490"> ✓ tests/lib/cache.test.ts (4 tests) 9ms</tspan>
+<tspan x="28" y="514"> ✓ tests/lib/sendXLM.test.ts (3 tests) 7ms</tspan>
+<tspan x="28" y="538">stdout | tests/contract.client.test.ts &gt; contract client &gt; subscribe builds/sends contract tx and returns hash</tspan>
+<tspan x="28" y="562">SIM: { ok: true }</tspan>
+<tspan x="28" y="586"> </tspan>
+<tspan x="28" y="610">stdout | tests/contract.client.test.ts &gt; contract client &gt; subscribe builds/sends contract tx and returns hash</tspan>
+<tspan x="28" y="634">SEND RESULT: { hash: &#39;TX_HASH&#39; }</tspan>
+<tspan x="28" y="658"> </tspan>
+<tspan x="28" y="682">stdout | tests/contract.client.test.ts &gt; contract client &gt; getSubscription decodes nested scvSome map payload</tspan>
+<tspan x="28" y="706">SIMULATION FULL: {</tspan>
+<tspan x="28" y="730">  result: { retval: { switch: [Function: switch], value: [Function: value] } }</tspan>
+<tspan x="28" y="754">}</tspan>
+<tspan x="28" y="778">RETVAL RAW: { switch: [Function: switch], value: [Function: value] }</tspan>
+<tspan x="28" y="802"> </tspan>
+<tspan x="28" y="826">stdout | tests/contract.client.test.ts &gt; contract client &gt; getSubscription returns null for scvVoid</tspan>
+<tspan x="28" y="850">SIMULATION FULL: {</tspan>
+<tspan x="28" y="874">  result: { retval: { switch: [Function: switch], value: [Function: value] } }</tspan>
+<tspan x="28" y="898">}</tspan>
+<tspan x="28" y="922">RETVAL RAW: { switch: [Function: switch], value: [Function: value] }</tspan>
+<tspan x="28" y="946"> </tspan>
+<tspan x="28" y="970">stdout | tests/contract.client.test.ts &gt; contract client &gt; getSubscription returns null when required fields are missing</tspan>
+<tspan x="28" y="994">SIMULATION FULL: {</tspan>
+<tspan x="28" y="1018">  result: { retval: { switch: [Function: switch], value: [Function: value] } }</tspan>
+<tspan x="28" y="1042">}</tspan>
+<tspan x="28" y="1066">RETVAL RAW: { switch: [Function: switch], value: [Function: value] }</tspan>
+<tspan x="28" y="1090"> </tspan>
+<tspan x="28" y="1114"> ✓ tests/contract.client.test.ts (5 tests) 14ms</tspan>
+<tspan x="28" y="1138"> </tspan>
+<tspan x="28" y="1162"> Test Files  4 passed (4)</tspan>
+<tspan x="28" y="1186">      Tests  13 passed (13)</tspan>
+<tspan x="28" y="1210">   Start at  01:21:41</tspan>
+<tspan x="28" y="1234">   Duration  1.59s (transform 312ms, setup 0ms, import 522ms, tests 34ms, environment 4.60s)</tspan>
+<tspan x="28" y="1258"> </tspan>
+<tspan x="28" y="1282"> </tspan></text>
+</svg>

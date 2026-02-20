@@ -89,6 +89,15 @@ cd apps/frontend/subscription_stellar_frontend
 npm test -- --run
 ```
 
+## Frontend Test Evidence Screenshot
+
+This screenshot captures:
+- discovered frontend test files
+- the exact command used
+- passing result summary (`4 passed` files, `13 passed` tests)
+
+![Frontend tests passing evidence](docs/screenshots/frontend-tests-passing.svg)
+
 ## Contract Package
 
 Soroban contract workspace is under:
