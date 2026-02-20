@@ -3,12 +3,21 @@ import {
   TransactionBuilder,
   Networks,
   Operation,
-  Asset,
-  Transaction
+  Asset
 } from "stellar-sdk";
-import freighterApi from "@stellar/freighter-api";
 
-const server = new Horizon.Server("https://horizon-testnet.stellar.org");
+import { wallet } from "@/wallet/manager";
+
+const server = new Horizon.Server(
+  "https://horizon-testnet.stellar.org"
+);
+
+const NETWORK = Networks.TESTNET;
+
+
+// ==============================
+// SEND XLM (wallet-agnostic)
+// ==============================
 
 export async function sendXLM(
   from: string,
@@ -20,7 +29,7 @@ export async function sendXLM(
 
   const tx = new TransactionBuilder(sourceAccount, {
     fee: fee.toString(),
-    networkPassphrase: Networks.TESTNET
+    networkPassphrase: NETWORK
   })
     .addOperation(
       Operation.payment({
@@ -32,19 +41,9 @@ export async function sendXLM(
     .setTimeout(60)
     .build();
 
-  // ✅ Freighter expects XDR string
-  const signed = await freighterApi.signTransaction(
-    tx.toXDR(),
-    { networkPassphrase: Networks.TESTNET }
-  );
+  const signed = await wallet.signTransaction(tx.toXDR());
 
-  // ✅ Convert signed XDR back to Transaction object
-  const signedTx = new Transaction(
-    signed.signedTxXdr,
-    Networks.TESTNET
-  );
-
-  const result = await server.submitTransaction(signedTx);
+  const result = await wallet.submitTransaction(signed.signedXdr);
 
   return result.hash;
 }

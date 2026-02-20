@@ -1,6 +1,5 @@
-import { useState } from "react";
-import freighterApi from "@stellar/freighter-api";
-import { useBalance } from "./hooks/useBalance";
+import { useState, useEffect } from "react";
+import { wallet } from "@/wallet/manager";
 import { sendXLM } from "./lib/sendXLM";
 
 function App() {
@@ -9,29 +8,45 @@ function App() {
   const [txHash, setTxHash] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
 
+  useEffect(() => {
+    if (!publicKey) return;
+
+    setLoading(true);
+
+    (async () => {
+      const session = wallet.getSession();
+      console.log("SESSION:", session);
+
+      const b = await wallet.getBalances();
+      console.log("BALANCES:", b);
+
+      setBalances(b);
+      setLoading(false);
+    })();
+
+  }, [publicKey]);
+
+  // ------------------------------
+  // CONNECT WALLET
+  // ------------------------------
   async function connectWallet() {
     try {
       setConnecting(true);
 
-      await freighterApi.requestAccess();
-      const result = await freighterApi.getAddress();
-
-      if (!result.address) {
-        alert("Freighter authorized but returned empty address.");
-        return;
-      }
-
-      setPublicKey(result.address);
+      const session = await wallet.connect("selector");
+      setPublicKey(session.address);
 
     } catch (e) {
-      console.error("Freighter connection failed:", e);
-      alert("Freighter permission rejected or extension issue.");
+      console.error("Wallet connection failed:", e);
+      alert("Wallet connection failed.");
     } finally {
       setConnecting(false);
     }
   }
 
-  // ✅ MOVE SEND FUNCTION HERE (before return)
+  // ------------------------------
+  // SEND XLM
+  // ------------------------------
   async function handleSend() {
     if (!publicKey) return;
 
@@ -53,7 +68,20 @@ function App() {
     }
   }
 
-  const { balances, loading } = useBalance(publicKey ?? undefined);
+  const [balances, setBalances] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!publicKey) return;
+
+    setLoading(true);
+
+    wallet.getBalances()
+      .then(setBalances)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+
+  }, [publicKey]);
 
   return (
     <div style={{ padding: 40 }}>
@@ -73,12 +101,21 @@ function App() {
             Connected wallet: <b>{publicKey}</b>
           </p>
 
-          {/* ✅ ADD SEND BUTTON HERE */}
           <button onClick={handleSend} disabled={sending}>
             {sending ? "Sending..." : "Send 1 XLM to myself"}
           </button>
         </>
       )}
+
+      <button
+        onClick={async () => {
+          await wallet.disconnect();
+          setPublicKey(null);
+          setTxHash(null);
+        }}
+      >
+        Disconnect
+      </button>
 
       {/* BALANCES */}
       <h2>Balances</h2>
@@ -87,15 +124,15 @@ function App() {
 
       {!loading &&
         balances.map((b) => (
-          <p key={b.asset}>
-            {b.asset}: {b.balance}
+          <p key={b.asset + (b.issuer ?? "")}>
+            {b.asset}: {b.amount}
           </p>
         ))}
 
-      {/* ✅ SHOW TX HASH */}
+      {/* TX RESULT */}
       {txHash && (
         <p>
-          ✅ Transaction sent! Hash: {txHash}
+          Transaction sent! Hash: {txHash}
         </p>
       )}
     </div>

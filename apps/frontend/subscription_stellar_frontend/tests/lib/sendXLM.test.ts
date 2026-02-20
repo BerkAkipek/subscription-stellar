@@ -22,13 +22,8 @@ vi.mock("stellar-sdk", () => {
   class TransactionBuilder {
     constructor() {}
 
-    addOperation() {
-      return this
-    }
-
-    setTimeout() {
-      return this
-    }
+    addOperation() { return this }
+    setTimeout() { return this }
 
     build() {
       return {
@@ -53,16 +48,19 @@ vi.mock("stellar-sdk", () => {
   }
 })
 
-vi.mock("@stellar/freighter-api", () => ({
-  default: {
-    signTransaction: vi.fn()
+vi.mock("@/wallet/manager", () => ({
+  wallet: {
+    signTransaction: vi.fn(),
+    submitTransaction: vi.fn()
   }
 }))
 
-import freighterApi from "@stellar/freighter-api"
+import { wallet } from "@/wallet/manager"
 
-const mockSignTransaction =
-  freighterApi.signTransaction as unknown as ReturnType<typeof vi.fn>
+const mockWallet = wallet as unknown as {
+  signTransaction: ReturnType<typeof vi.fn>;
+  submitTransaction: ReturnType<typeof vi.fn>;
+};
 
 describe("sendXLM", () => {
   it("builds, signs, and submits transaction", async () => {
@@ -70,17 +68,52 @@ describe("sendXLM", () => {
     mockServer.loadAccount.mockResolvedValue({})
     mockServer.fetchBaseFee.mockResolvedValue("100")
 
-    mockServer.submitTransaction.mockResolvedValue({
-      hash: "TEST_HASH"
+    mockWallet.signTransaction.mockResolvedValue({
+      signedXdr: "SIGNED_XDR",
+      signerAddress: "GFROM"
     })
 
-    mockSignTransaction.mockResolvedValue({
-      signedTxXdr: "SIGNED_XDR",
-      signerAddress: "GFROM"
+    mockWallet.submitTransaction.mockResolvedValue({
+      hash: "TEST_HASH",
+      status: "success"
     })
 
     const result = await sendXLM("GFROM", "GTO", "1")
 
     expect(result).toBe("TEST_HASH")
   })
+
+  it("throws if wallet rejects signing", async () => {
+
+    mockServer.loadAccount.mockResolvedValue({})
+    mockServer.fetchBaseFee.mockResolvedValue("100")
+
+    mockWallet.signTransaction.mockRejectedValue(
+      new Error("User rejected")
+    )
+
+    await expect(
+      sendXLM("GFROM", "GTO", "1")
+    ).rejects.toThrow("User rejected")
+  })
+
+  it("throws if transaction submission fails", async () => {
+
+    mockServer.loadAccount.mockResolvedValue({})
+    mockServer.fetchBaseFee.mockResolvedValue("100")
+
+    mockWallet.signTransaction.mockResolvedValue({
+      signedXdr: "SIGNED_XDR",
+      signerAddress: "GFROM"
+    })
+
+    mockWallet.submitTransaction.mockRejectedValue(
+      new Error("Horizon rejected transaction")
+    )
+
+    await expect(
+      sendXLM("GFROM", "GTO", "1")
+    ).rejects.toThrow("Horizon rejected transaction")
+  })
+
 })
