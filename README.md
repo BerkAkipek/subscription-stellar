@@ -129,6 +129,10 @@ cd apps/backend
 go test ./...
 ```
 
+Test evidence screenshot:
+
+![Frontend and backend tests passing](docs/screenshots/tests-passing-small.svg)
+
 ## Contract Workspace
 
 - Path: `packages/contracts/subscription`

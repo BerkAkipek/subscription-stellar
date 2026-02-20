@@ -15,6 +15,7 @@ const {
   mockFromXDR,
   mockNativeToScVal,
   mockScValToBigInt,
+  mockContractCtor,
 } = vi.hoisted(() => {
   const mockRpcServer = {
     getAccount: vi.fn(),
@@ -33,11 +34,16 @@ const {
     mockFromXDR: vi.fn(),
     mockNativeToScVal: vi.fn(),
     mockScValToBigInt: vi.fn(),
+    mockContractCtor: vi.fn(),
   };
 });
 
 vi.mock("stellar-sdk", () => {
   class Contract {
+    constructor(id: string) {
+      mockContractCtor(id);
+    }
+
     call = mockCall;
   }
 
@@ -146,6 +152,8 @@ describe("contract client", () => {
     const hash = await subscribe("GUSER", 7, 3600, 25);
 
     expect(mockRpcServer.getAccount).toHaveBeenCalledWith("GUSER");
+    expect(mockContractCtor).toHaveBeenCalledTimes(1);
+    expect(typeof mockContractCtor.mock.calls[0][0]).toBe("string");
     expect(mockCall).toHaveBeenCalledWith(
       "subscribe",
       "USER_SCVAL",
@@ -244,6 +252,8 @@ describe("contract client", () => {
 
     const result = await getTokenBalance("GUSER");
 
+    expect(mockContractCtor).toHaveBeenCalledTimes(1);
+    expect(typeof mockContractCtor.mock.calls[0][0]).toBe("string");
     expect(mockCall).toHaveBeenCalledWith("balance", "USER_SCVAL");
     expect(result).toBe("975");
   });

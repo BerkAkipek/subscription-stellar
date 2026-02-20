@@ -4,6 +4,7 @@ import type { Balance } from "@/wallet/types";
 import { sendXLM } from "./lib/sendXLM";
 import { subscribe, getSubscription, getTokenBalance } from "@/contract/client";
 import { getCached, removeCached, setCached } from "@/lib/cache";
+import { formatXlmFromStroops } from "@/lib/formatXlm";
 import "./App.css";
 
 type AsyncStatus = "idle" | "loading" | "success" | "error";
@@ -29,18 +30,6 @@ function balanceCacheKey(address: string) {
 
 function subscriptionCacheKey(address: string) {
   return `cache:subscription:${address}`;
-}
-
-function formatXlmFromStroops(stroops: string | null | undefined): string {
-  if (!stroops) return "0";
-  try {
-    const n = BigInt(stroops);
-    const whole = n / STROOPS_PER_XLM;
-    const frac = (n % STROOPS_PER_XLM).toString().padStart(7, "0").replace(/0+$/, "");
-    return frac ? `${whole.toString()}.${frac}` : whole.toString();
-  } catch {
-    return "0";
-  }
 }
 
 function App() {

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="250" viewBox="0 0 980 250">
+  <rect width="980" height="250" fill="#0b1020"/>
+  <rect x="14" y="14" width="952" height="222" rx="10" fill="#111827" stroke="#334155"/>
+  <text x="30" y="40" fill="#93c5fd" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14">Frontend (Vitest)</text>
+  <text x="30" y="64" fill="#e5e7eb" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13">&gt; npm test -- --run</text>
+  <text x="30" y="86" fill="#86efac" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13">✓ Test Files  5 passed (5)</text>
+  <text x="30" y="106" fill="#86efac" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13">✓ Tests      19 passed (19)</text>
+  <text x="30" y="140" fill="#93c5fd" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14">Backend (Go)</text>
+  <text x="30" y="164" fill="#e5e7eb" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13">&gt; GOCACHE=/tmp/go-build go test ./...</text>
+  <text x="30" y="186" fill="#86efac" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13">ok github.com/BerkAkipek/subscription_stellar/backend/cmd/api</text>
+  <text x="30" y="216" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12">Captured after latest native XLM + UI updates.</text>
+</svg>
