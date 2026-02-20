@@ -1,123 +1,149 @@
 # Stellar Subscription Service
 
-Monorepo for a Stellar testnet subscription app:
-- Frontend: React + TypeScript + Vite
-- Backend: Go API scaffold
-- Contract package: Soroban subscription contract workspace
+Monorepo for a Stellar Testnet subscription app with native XLM billing.
 
-The frontend supports wallet connect, sending XLM, subscribing through a Soroban contract, balance/subscription reads, loading/progress feedback, and basic client-side caching for faster perceived response.
+## Stack
+
+- Frontend: React + TypeScript + Vite
+- Backend: Go API
+- Contracts: Soroban (Rust)
 
 ## Repository Structure
 
 ```text
 .
 ├── apps
-│   ├── backend                          # Go API
-│   └── frontend
-│       └── subscription_stellar_frontend
+│   ├── backend
+│   └── frontend/subscription_stellar_frontend
 ├── packages
-│   ├── contracts
-│   │   └── subscription                 # Soroban workspace
-│   └── stellar                          # Shared Stellar Go packages
+│   ├── contracts/subscription
+│   └── stellar
 ├── infra
 └── Makefile
 ```
 
-## Prerequisites
+## Current Testnet Contracts
 
-- Node.js 20+
-- npm
-- Go (matching project/toolchain constraints)
-- A Stellar testnet wallet (Freighter or supported wallet through selector)
+- Subscription contract: `CBPVGE3CNJUFF46O6VLXZXQO2F35JJN2UO2D2RUSY5WPJUMLBT6KVGQ4`
+- Native XLM SAC (payment contract): `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC`
+
+## Features
+
+- Wallet connect/disconnect (wallet selector/freighter providers)
+- Send 1 XLM to self (wallet tx sanity path)
+- Subscribe on-chain with native XLM payment
+- Inter-contract transfer during subscribe (`subscription -> native SAC transfer`)
+- Read subscription state (`plan_id`, `expires_at`)
+- Read XLM SAC balance (stroops) and render as XLM
+- Backend observed state polling (`/api/state`) with latest subscription, balance, and recent events
+- Progress + loading states for async actions
+- Client-side cache for faster hydration:
+- `balances` TTL: 30s
+- `subscription` TTL: 15s
+- One-page futuristic/minimal UI optimized for desktop and mobile
+
+## Subscription Model
+
+- Plan: `plan_id = 1`
+- Duration: `3600` seconds (1 hour)
+- Price: `10_000_000` stroops (`1 XLM`)
+
+## Environment
+
+Frontend (`apps/frontend/subscription_stellar_frontend/.env`):
+
+```env
+VITE_SUBSCRIPTION_CONTRACT_ID=CBPVGE3CNJUFF46O6VLXZXQO2F35JJN2UO2D2RUSY5WPJUMLBT6KVGQ4
+VITE_PAYMENT_CONTRACT_ID=CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC
+VITE_BACKEND_URL=http://localhost:8080
+```
+
+Backend:
+
+- `SUBSCRIPTION_CONTRACT_ID`
+- `PAYMENT_CONTRACT_ID`
+- `STELLAR_NETWORK` (default `testnet`)
+- `STELLAR_SOURCE` (default `deployer`)
+
+Reference file: `infra/env/testnet.env`.
 
 ## Quick Start
 
-1. Install frontend dependencies:
+1. Frontend deps:
+
 ```bash
 cd apps/frontend/subscription_stellar_frontend
 npm install
 ```
 
-2. Configure frontend environment:
+2. Frontend env:
+
 ```bash
 cp .env.example .env
 ```
-Set:
-- `VITE_SUBSCRIPTION_CONTRACT_ID`
-- `VITE_PAYMENT_CONTRACT_ID` (testnet native XLM SAC recommended)
-- `VITE_BACKEND_URL`
 
-3. Run both apps from repo root:
+3. Run backend + frontend:
+
 ```bash
 make r
 ```
 
-4. Open:
-- Frontend: `http://localhost:5173`
+4. Open `http://localhost:5173`
 
-## Makefile Commands (root)
+## Backend API
 
-- `make r` or `make run-all`: run backend + frontend
-- `make rb`: run backend only
-- `make rf`: run frontend only
-- `make t`: run backend + frontend tests
+- `GET /healthz` -> `{ "ok": true }`
+- `GET /api/state?user=<G...>` -> subscription state, XLM balance in stroops, recent events, observed timestamp, network, contract ids
+
+## Commands
+
+- `make r` / `make run-all`: run backend + frontend
+- `make rb`: backend only
+- `make rf`: frontend only
+- `make t`: all tests
 - `make tb`: backend tests
 - `make tf`: frontend tests
-- `make c`: coverage commands
+- `make c`: coverage
 - `make cl`: cleanup
 
-## Frontend Features
+## Testing
 
-- Wallet connect/disconnect
-- Send 1 XLM to self (test transaction path)
-- Subscribe via Soroban contract call
-- Read subscription state from contract
-- Loading states and status messaging
-- Subscription progress indicator (step + percentage)
-- Basic local cache:
-  - balances cache TTL: 30s
-  - subscription cache TTL: 15s
+Frontend tests (`apps/frontend/subscription_stellar_frontend/tests`):
 
-## Frontend Test Coverage
-
-Located in `apps/frontend/subscription_stellar_frontend/tests`:
 - `tests/lib/getBalance.test.ts`
 - `tests/lib/sendXLM.test.ts`
-- `tests/contract.client.test.ts` (subscription contract client logic)
-- `tests/lib/cache.test.ts` (TTL cache behavior)
+- `tests/contract.client.test.ts`
+- `tests/lib/cache.test.ts`
 
-Run directly:
+Run:
+
 ```bash
 cd apps/frontend/subscription_stellar_frontend
 npm test -- --run
 ```
 
-## Frontend Test Evidence Screenshot
+Backend:
 
-This screenshot captures:
-- discovered frontend test files
-- the exact command used
-- passing result summary (`4 passed` files, `13 passed` tests)
+```bash
+cd apps/backend
+go test ./...
+```
 
-![Frontend tests passing evidence](docs/screenshots/frontend-tests-passing.svg)
+## Contract Workspace
 
-## Contract Package
-
-Soroban contract workspace is under:
-- `packages/contracts/subscription`
-
-Core contract source:
+- Path: `packages/contracts/subscription`
+- Main subscription contract source:
 - `packages/contracts/subscription/contracts/subscription/src/lib.rs`
 
 ## Notes
 
-- This project targets Stellar testnet endpoints in current frontend code.
-- Keep `VITE_SUBSCRIPTION_CONTRACT_ID` and `VITE_PAYMENT_CONTRACT_ID` aligned with deployed contracts on the same network.
-- Testnet native XLM SAC contract id: `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC`
+- App is configured for Stellar Testnet.
+- `PAYMENT_CONTRACT_ID` is the active payment contract (native XLM SAC).
+- `TOKENIZATION_CONTRACT_ID` remains only as legacy fallback compatibility in parts of the codebase.
 
-## 1-Minute Demo Video
+## Demo
 
-- Video URL: [Watch the 1-minute demo](https://www.loom.com/share/96419e34835643668225477a101b800e)
+- Video: [Watch the 1-minute demo](https://www.loom.com/share/96419e34835643668225477a101b800e)
 
 ## License
 
