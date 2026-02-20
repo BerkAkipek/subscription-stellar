@@ -1,0 +1,73 @@
+############################
+# 🔐 ENV FILES
+############################
+.env
+.env.*
+!.env.example
+
+############################
+# 🟢 GO BACKEND
+############################
+# binaries
+bin/
+build/
+dist/
+*.exe
+*.out
+*.test
+
+# go cache / tooling
+.coverprofile
+*.cover
+vendor/
+
+############################
+# 🟣 FRONTEND (VITE / REACT)
+############################
+node_modules/
+dist/
+build/
+.vite/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+############################
+# 🐳 DOCKER / INFRA
+############################
+*.local
+docker-compose.override.yml
+
+############################
+# 🧪 TEST OUTPUTS
+############################
+coverage/
+coverage.out
+*.lcov
+
+############################
+# 🧠 IDE / EDITOR
+############################
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+
+############################
+# 💻 OS FILES
+############################
+.DS_Store
+Thumbs.db
+
+############################
+# 🔒 SECRETS / KEYS
+############################
+*.pem
+*.key
+*.crt
+*.p12
+wallet.json
+secrets.json
