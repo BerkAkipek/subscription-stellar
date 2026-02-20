@@ -7,6 +7,7 @@ import {
   xdr,
   rpc,
   nativeToScVal,
+  scValToBigInt,
 } from "stellar-sdk";
 
 import { wallet } from "@/wallet/manager";
@@ -31,6 +32,37 @@ if (!TOKENIZATION_CONTRACT_ID) {
 }
 
 const NETWORK = Networks.TESTNET;
+
+function stringifySimulationField(value: unknown): string | null {
+  if (value == null) return null;
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => stringifySimulationField(item))
+      .filter((item): item is string => Boolean(item))
+      .join(" | ");
+  }
+
+  if (typeof value === "object") {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  }
+
+  return String(value);
+}
+
+function simulationErrorMessage(sim: any): string | null {
+  const topLevel = stringifySimulationField(sim?.error);
+  if (topLevel) return topLevel;
+
+  const resultLevel = stringifySimulationField(sim?.result?.error);
+  if (resultLevel) return resultLevel;
+
+  return null;
+}
 
 
 // ==============================
@@ -140,7 +172,10 @@ export async function subscribe(
     .build();
 
   const sim = await rpcServer.simulateTransaction(tx);
-  console.log("SIM:", sim);
+  const simError = simulationErrorMessage(sim);
+  if (simError) {
+    throw new Error(`Subscription simulation failed: ${simError}`);
+  }
 
   const prepared = await rpcServer.prepareTransaction(tx);
 
@@ -219,8 +254,12 @@ export async function getTokenBalance(userAddress: string): Promise<string | nul
   if (!retval) return null;
 
   try {
-    return retval.value().toString();
+    return scValToBigInt(retval).toString();
   } catch {
-    return null;
+    try {
+      return retval.value().toString();
+    } catch {
+      return null;
+    }
   }
 }

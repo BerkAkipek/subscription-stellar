@@ -161,6 +161,17 @@ function App() {
     if (!publicKey) return;
 
     try {
+      const latestTokenBalance = await getTokenBalance(publicKey);
+      setTokenBalance(latestTokenBalance);
+
+      const available = BigInt(latestTokenBalance ?? "0");
+      const required = BigInt(SUBSCRIPTION_PAYMENT_AMOUNT);
+      if (available < required) {
+        throw new Error(
+          `Insufficient token balance for subscription: need ${required.toString()}, have ${available.toString()}`
+        );
+      }
+
       setSubscribeStatus("loading");
       setStatusMessage("Preparing subscription...");
       setSubscriptionProgress(10);

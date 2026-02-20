@@ -13,6 +13,7 @@ const {
   mockUint64FromString,
   mockFromXDR,
   mockNativeToScVal,
+  mockScValToBigInt,
 } = vi.hoisted(() => {
   const mockRpcServer = {
     getAccount: vi.fn(),
@@ -30,6 +31,7 @@ const {
     mockUint64FromString: vi.fn(),
     mockFromXDR: vi.fn(),
     mockNativeToScVal: vi.fn(),
+    mockScValToBigInt: vi.fn(),
   };
 });
 
@@ -88,6 +90,7 @@ vi.mock("stellar-sdk", () => {
       Server,
     },
     nativeToScVal: mockNativeToScVal,
+    scValToBigInt: mockScValToBigInt,
   };
 });
 
@@ -124,6 +127,7 @@ describe("contract client", () => {
     mockUint64FromString.mockImplementation((v) => `U64_RAW_${v}`);
     mockScvU64.mockImplementation((v) => `U64_${v}`);
     mockNativeToScVal.mockImplementation((v, t) => `SCVAL_${v}_${t.type}`);
+    mockScValToBigInt.mockImplementation((v: any) => BigInt(v.value()));
 
     mockRpcServer.getAccount.mockResolvedValue({ id: "ACCOUNT" });
     mockRpcServer.prepareTransaction.mockResolvedValue({
@@ -154,6 +158,19 @@ describe("contract client", () => {
     expect(mockFromXDR).toHaveBeenCalledWith("SIGNED_XDR", "TESTNET");
     expect(mockRpcServer.sendTransaction).toHaveBeenCalledWith({ signed: true });
     expect(hash).toBe("TX_HASH");
+  });
+
+  it("subscribe throws a readable error when simulation fails", async () => {
+    mockRpcServer.simulateTransaction.mockResolvedValue({
+      error: "HostError: Error(WasmVm, InvalidAction)",
+    });
+
+    await expect(subscribe("GUSER", 7, 3600, 25)).rejects.toThrow(
+      "Subscription simulation failed: HostError: Error(WasmVm, InvalidAction)"
+    );
+
+    expect(mockRpcServer.prepareTransaction).not.toHaveBeenCalled();
+    expect(mockRpcServer.sendTransaction).not.toHaveBeenCalled();
   });
 
   it("getSubscription returns null when simulation has no retval", async () => {
