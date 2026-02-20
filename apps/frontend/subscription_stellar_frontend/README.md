@@ -1,73 +1,109 @@
-# React + TypeScript + Vite
+# Frontend: Subscription Stellar App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + TypeScript + Vite frontend for wallet actions and Soroban subscription interactions.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Connect wallet (selector/freighter flow)
+- Display balances
+- Send XLM transaction
+- Subscribe to contract plan
+- Read current subscription
+- Loading states and progress indicator for long-running actions
+- Basic local cache for faster UI hydration
 
-## React Compiler
+## Environment
 
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
+Create `.env` in this folder:
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```env
+VITE_CONTRACT_ID=YOUR_SOROBAN_CONTRACT_ID
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+You can copy the example:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```bash
+cp .env.example .env
+```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Install
+
+```bash
+npm install
+```
+
+## Run
+
+```bash
+npm run dev
+```
+
+Default URL: `http://localhost:5173`
+
+## Scripts
+
+- `npm run dev`: start Vite dev server
+- `npm run build`: type-check and production build
+- `npm run preview`: preview production build
+- `npm run lint`: run ESLint
+- `npm test`: run Vitest
+
+## Contract Client Logic
+
+Main contract client file:
+- `src/contract/client.ts`
+
+Exposed operations:
+- `subscribe(userAddress, planId, durationSeconds)`
+- `getSubscription(userAddress)`
+
+## UX State Model
+
+`src/App.tsx` uses explicit async states:
+- `idle`
+- `loading`
+- `success`
+- `error`
+
+Used for:
+- wallet connect
+- send transaction
+- subscribe flow
+- initial data load
+
+Subscription flow includes:
+- live status text
+- step label
+- progress percentage bar
+
+## Basic Caching
+
+Implemented in:
+- `src/lib/cache.ts`
+
+Current cache keys/TTLs:
+- `cache:balances:<address>` -> 30 seconds
+- `cache:subscription:<address>` -> 15 seconds
+
+Behavior:
+- Read cache first for immediate UI render
+- Refresh from network in background
+- Replace cache with fresh results
+- Remove invalid/expired/corrupted entries automatically
+
+## Tests
+
+Test directory:
+- `tests/`
+
+Current test files:
+- `tests/lib/getBalance.test.ts`
+- `tests/lib/sendXLM.test.ts`
+- `tests/contract.client.test.ts`
+- `tests/lib/cache.test.ts`
+
+Run tests:
+
+```bash
+npm test -- --run
 ```

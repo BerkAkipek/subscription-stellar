@@ -1,97 +1,110 @@
 # Stellar Subscription Service
 
-A full-stack web application that demonstrates wallet-based payments on the Stellar network.
-Users connect their Freighter wallet, view balances, and send testnet transactions directly from the UI.
+Monorepo for a Stellar testnet subscription app:
+- Frontend: React + TypeScript + Vite
+- Backend: Go API scaffold
+- Contract package: Soroban subscription contract workspace
 
-This project is built as a monorepo with a Go backend and a React + TypeScript frontend.
+The frontend supports wallet connect, sending XLM, subscribing through a Soroban contract, balance/subscription reads, loading/progress feedback, and basic client-side caching for faster perceived response.
 
-## Features
+## Repository Structure
 
-- Connect Stellar wallet via Freighter
+```text
+.
+├── apps
+│   ├── backend                          # Go API
+│   └── frontend
+│       └── subscription_stellar_frontend
+├── packages
+│   ├── contracts
+│   │   └── subscription                 # Soroban workspace
+│   └── stellar                          # Shared Stellar Go packages
+├── infra
+└── Makefile
+```
 
-- Display on-chain balances from Horizon
+## Prerequisites
 
-- Send XLM transaction on testnet
+- Node.js 20+
+- npm
+- Go (matching project/toolchain constraints)
+- A Stellar testnet wallet (Freighter or supported wallet through selector)
 
-- Show transaction result to the user
+## Quick Start
 
-- Unit tests for blockchain logic
-
-- Monorepo setup with Makefile orchestration
-
-## Architecture
-
-subscription_stellar/
-│
-├── apps/
-│ ├── backend/ → Go API (subscription logic later)
-│ └── frontend/ → React + Vite UI
-│
-├── packages/ → shared logic (future)
-├── infra/ → docker/env configs
-└── Makefile → dev/test commands
-
-## Setup Instructions
-
-Clone the repository
-
-git clone https://github.com/BerkAkipek/subscription-stellar.git
-
-cd subscription-stellar
-
-Install frontend dependencies
-
+1. Install frontend dependencies:
+```bash
 cd apps/frontend/subscription_stellar_frontend
 npm install
+```
 
-Run the application
+2. Configure frontend environment:
+```bash
+cp .env.example .env
+```
+Set `VITE_CONTRACT_ID` to your deployed Soroban contract ID.
 
-From project root:
-
+3. Run both apps from repo root:
+```bash
 make r
+```
 
-This starts both the Go backend and the React frontend.
+4. Open:
+- Frontend: `http://localhost:5173`
 
-Frontend runs at:
+## Makefile Commands (root)
 
-http://localhost:5173
+- `make r` or `make run-all`: run backend + frontend
+- `make rb`: run backend only
+- `make rf`: run frontend only
+- `make t`: run backend + frontend tests
+- `make tb`: backend tests
+- `make tf`: frontend tests
+- `make c`: coverage commands
+- `make cl`: cleanup
 
-Connect wallet
+## Frontend Features
 
-Install Freighter wallet extension
+- Wallet connect/disconnect
+- Send 1 XLM to self (test transaction path)
+- Subscribe via Soroban contract call
+- Read subscription state from contract
+- Loading states and status messaging
+- Subscription progress indicator (step + percentage)
+- Basic local cache:
+  - balances cache TTL: 30s
+  - subscription cache TTL: 15s
 
-Switch network to Testnet
+## Frontend Test Coverage
 
-Fund your wallet using Friendbot
+Located in `apps/frontend/subscription_stellar_frontend/tests`:
+- `tests/lib/getBalance.test.ts`
+- `tests/lib/sendXLM.test.ts`
+- `tests/contract.client.test.ts` (subscription contract client logic)
+- `tests/lib/cache.test.ts` (TTL cache behavior)
 
-Click Connect Wallet in the app
+Run directly:
+```bash
+cd apps/frontend/subscription_stellar_frontend
+npm test -- --run
+```
 
-Approve the connection in Freighter
+## Contract Package
 
-## Run tests
+Soroban contract workspace is under:
+- `packages/contracts/subscription`
 
-From project root:
+Core contract source:
+- `packages/contracts/subscription/contracts/subscription/src/lib.rs`
 
-make t
+## Notes
 
-Or run individually:
+- This project targets Stellar testnet endpoints in current frontend code.
+- Keep `VITE_CONTRACT_ID` aligned with the deployed contract on the same network.
 
-make tf (frontend tests)
-make tb (backend tests)
+## 1-Minute Demo Video
 
-## Screenshots
-
-Wallet Connected State
-Add screenshot here: docs/screenshots/wallet-connected.png
-
-Balance Displayed
-Add screenshot here: docs/screenshots/balance.png
-
-Successful Testnet Transaction
-Add screenshot here: docs/screenshots/transaction-popup.png
-
-Transaction Result Shown to User
-Add screenshot here: docs/screenshots/transaction-success.png
+- Video URL: `ADD_VIDEO_LINK_HERE`
 
 ## License
 

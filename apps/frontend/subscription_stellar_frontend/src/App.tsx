@@ -1,21 +1,49 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { wallet } from "@/wallet/manager";
+import type { Balance } from "@/wallet/types";
 import { sendXLM } from "./lib/sendXLM";
 import { subscribe, getSubscription } from "@/contract/client";
+import { getCached, removeCached, setCached } from "@/lib/cache";
+import "./App.css";
+
+type AsyncStatus = "idle" | "loading" | "success" | "error";
+type SubscriptionView = { planId: number; expiresAt: number } | null;
+
+const BALANCE_CACHE_TTL_MS = 30_000;
+const SUBSCRIPTION_CACHE_TTL_MS = 15_000;
+
+function balanceCacheKey(address: string) {
+  return `cache:balances:${address}`;
+}
+
+function subscriptionCacheKey(address: string) {
+  return `cache:subscription:${address}`;
+}
 
 function App() {
   const [publicKey, setPublicKey] = useState<string | null>(null);
 
-  const [connecting, setConnecting] = useState(false);
-  const [sending, setSending] = useState(false);
-  const [subscribing, setSubscribing] = useState(false);
+  const [connectStatus, setConnectStatus] = useState<AsyncStatus>("idle");
+  const [sendStatus, setSendStatus] = useState<AsyncStatus>("idle");
+  const [subscribeStatus, setSubscribeStatus] = useState<AsyncStatus>("idle");
+  const [loadStatus, setLoadStatus] = useState<AsyncStatus>("idle");
 
   const [txHash, setTxHash] = useState<string | null>(null);
 
-  const [balances, setBalances] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [balances, setBalances] = useState<Balance[]>([]);
+  const [subscription, setSubscription] = useState<SubscriptionView>(null);
+  const [subscriptionProgress, setSubscriptionProgress] = useState(0);
+  const [subscriptionStep, setSubscriptionStep] = useState("");
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  const [subscription, setSubscription] = useState<any>(null);
+  const connecting = connectStatus === "loading";
+  const sending = sendStatus === "loading";
+  const subscribing = subscribeStatus === "loading";
+  const loading = loadStatus === "loading";
+  const anyBusy = useMemo(
+    () => connecting || sending || subscribing || loading,
+    [connecting, sending, subscribing, loading]
+  );
 
   function formatAddress(address: string) {
     if (address.length <= 12) return address;
@@ -26,8 +54,13 @@ function App() {
   // ==============================
   // HELPER — RETRY READ SUBSCRIPTION
   // ==============================
-  async function fetchSubscriptionWithRetry(address: string, tries = 5) {
+  async function fetchSubscriptionWithRetry(
+    address: string,
+    tries = 5,
+    onAttempt?: (attempt: number, total: number) => void
+  ) {
     for (let i = 0; i < tries; i++) {
+      onAttempt?.(i + 1, tries);
       const sub = await getSubscription(address);
       console.log("Retry read subscription:", sub);
 
@@ -44,14 +77,17 @@ function App() {
   // ==============================
   async function connectWallet() {
     try {
-      setConnecting(true);
+      setConnectStatus("loading");
+      setStatusMessage("Connecting wallet...");
       const session = await wallet.connect("selector");
       setPublicKey(session.address);
+      setConnectStatus("success");
+      setStatusMessage("Wallet connected.");
     } catch (e) {
       console.error("Wallet connection failed:", e);
+      setConnectStatus("error");
+      setStatusMessage("Wallet connection failed.");
       alert("Wallet connection failed.");
-    } finally {
-      setConnecting(false);
     }
   }
 
@@ -63,7 +99,9 @@ function App() {
     if (!publicKey) return;
 
     try {
-      setSending(true);
+      setSendStatus("loading");
+      setStatusMessage("Sending XLM transaction...");
+      setTxHash(null);
 
       const hash = await sendXLM(
         publicKey,
@@ -72,11 +110,13 @@ function App() {
       );
 
       setTxHash(hash);
+      setSendStatus("success");
+      setStatusMessage("Transaction submitted.");
     } catch (e) {
       console.error("Send failed:", e);
+      setSendStatus("error");
+      setStatusMessage("Transaction failed.");
       alert("Transaction failed.");
-    } finally {
-      setSending(false);
     }
   }
 
@@ -88,7 +128,10 @@ function App() {
     if (!publicKey) return;
 
     try {
-      setSubscribing(true);
+      setSubscribeStatus("loading");
+      setStatusMessage("Preparing subscription...");
+      setSubscriptionProgress(10);
+      setSubscriptionStep("Building and signing transaction");
 
       const hash = await subscribe(
         publicKey,
@@ -97,20 +140,42 @@ function App() {
       );
 
       console.log("Subscription tx:", hash);
+      setSubscriptionProgress(40);
+      setSubscriptionStep("Waiting for ledger confirmation");
 
       // wait for RPC confirmation
       await new Promise(r => setTimeout(r, 4000));
+      setSubscriptionProgress(55);
+      setSubscriptionStep("Reading subscription state");
 
       // retry reading state
-      const sub = await fetchSubscriptionWithRetry(publicKey);
+      const sub = await fetchSubscriptionWithRetry(
+        publicKey,
+        5,
+        (attempt, total) => {
+          const progress = 55 + Math.round((attempt / total) * 45);
+          setSubscriptionProgress(progress);
+          setSubscriptionStep(`Checking on-chain state (${attempt}/${total})`);
+        }
+      );
 
       setSubscription(sub);
+      setCached(subscriptionCacheKey(publicKey), sub, SUBSCRIPTION_CACHE_TTL_MS);
+      setSubscribeStatus("success");
+      setStatusMessage(
+        sub ? "Subscription updated." : "No active subscription found yet."
+      );
 
     } catch (e) {
       console.error("Subscribe failed:", e);
+      setSubscribeStatus("error");
+      setStatusMessage("Subscription failed.");
       alert("Subscription failed.");
     } finally {
-      setSubscribing(false);
+      setTimeout(() => {
+        setSubscriptionProgress(0);
+        setSubscriptionStep("");
+      }, 800);
     }
   }
 
@@ -121,20 +186,45 @@ function App() {
   useEffect(() => {
     if (!publicKey) return;
 
-    setLoading(true);
+    const cachedBalances = getCached<Balance[]>(balanceCacheKey(publicKey));
+    if (cachedBalances) {
+      setBalances(cachedBalances);
+      setStatusMessage("Loaded cached balances. Refreshing...");
+    }
+
+    const cachedSubscription = getCached<SubscriptionView>(
+      subscriptionCacheKey(publicKey)
+    );
+    if (cachedSubscription) {
+      setSubscription(cachedSubscription);
+      setStatusMessage("Loaded cached subscription. Refreshing...");
+    }
+
+    setLoadStatus("loading");
+    if (!cachedBalances && !cachedSubscription) {
+      setStatusMessage("Loading wallet data...");
+    }
 
     (async () => {
       try {
         const b = await wallet.getBalances();
         setBalances(b);
+        setCached(balanceCacheKey(publicKey), b, BALANCE_CACHE_TTL_MS);
 
         const sub = await getSubscription(publicKey);
         setSubscription(sub);
+        setCached(subscriptionCacheKey(publicKey), sub, SUBSCRIPTION_CACHE_TTL_MS);
+        setLoadStatus("success");
+        setStatusMessage("Wallet data loaded.");
 
       } catch (e) {
         console.error("Load failed:", e);
+        setLoadStatus("error");
+        setStatusMessage("Failed to load wallet data.");
       } finally {
-        setLoading(false);
+        setTimeout(() => {
+          setLoadStatus("idle");
+        }, 1000);
       }
     })();
 
@@ -149,9 +239,32 @@ function App() {
       setBalances([]);
       setSubscription(null);
       setTxHash(null);
-      setLoading(false);
+      setLoadStatus("idle");
+      setConnectStatus("idle");
+      setSendStatus("idle");
+      setSubscribeStatus("idle");
+      setSubscriptionProgress(0);
+      setSubscriptionStep("");
+      setStatusMessage(null);
     }
   }, [publicKey]);
+
+  useEffect(() => {
+    if (!publicKey) return;
+
+    setCached(balanceCacheKey(publicKey), balances, BALANCE_CACHE_TTL_MS);
+  }, [balances, publicKey]);
+
+  useEffect(() => {
+    if (!publicKey) return;
+
+    if (!subscription) {
+      removeCached(subscriptionCacheKey(publicKey));
+      return;
+    }
+
+    setCached(subscriptionCacheKey(publicKey), subscription, SUBSCRIPTION_CACHE_TTL_MS);
+  }, [subscription, publicKey]);
 
 
   // ==============================
@@ -159,24 +272,35 @@ function App() {
   // ==============================
   return (
     <div
-      style={{
-        minHeight: "100vh",
-        width: "100%",
-        padding: 40,
-        boxSizing: "border-box",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        textAlign: "center",
-        gap: 12,
-      }}
+      className="app"
     >
       <h1>Stellar App</h1>
 
+      {statusMessage && (
+        <div className="status-card" role="status" aria-live="polite">
+          {anyBusy && <span className="spinner" aria-hidden="true" />}
+          <span>{statusMessage}</span>
+        </div>
+      )}
+
+      {subscribing && (
+        <div className="progress-wrap" aria-live="polite">
+          <div className="progress-label">
+            <span>{subscriptionStep || "Updating subscription"}</span>
+            <span>{subscriptionProgress}%</span>
+          </div>
+          <div className="progress-track">
+            <div
+              className="progress-fill"
+              style={{ width: `${subscriptionProgress}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* CONNECT BUTTON */}
       {!publicKey && (
-        <button onClick={connectWallet}>
+        <button onClick={connectWallet} disabled={connecting}>
           {connecting ? "Connecting..." : "Connect Wallet"}
         </button>
       )}
@@ -188,11 +312,11 @@ function App() {
             Connected wallet: <b>{formatAddress(publicKey)}</b>
           </p>
 
-          <button onClick={handleSend} disabled={sending}>
+          <button onClick={handleSend} disabled={sending || loading || subscribing}>
             {sending ? "Sending..." : "Send 1 XLM to myself"}
           </button>
 
-          <button onClick={handleSubscribe} disabled={subscribing}>
+          <button onClick={handleSubscribe} disabled={subscribing || loading || sending}>
             {subscribing ? "Subscribing..." : "Subscribe to Plan"}
           </button>
 
@@ -201,6 +325,7 @@ function App() {
               await wallet.disconnect();
               setPublicKey(null);
             }}
+            disabled={anyBusy}
           >
             Disconnect
           </button>
@@ -221,8 +346,6 @@ function App() {
 
       {/* SUBSCRIPTION */}
       <h2>Subscription</h2>
-
-      {subscribing && <p>Updating subscription...</p>}
 
       {!subscribing && !subscription && (
         <p>No active subscription</p>
