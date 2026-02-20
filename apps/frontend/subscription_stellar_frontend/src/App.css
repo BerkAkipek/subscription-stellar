@@ -1,63 +1,161 @@
 .app {
-  width: min(720px, 100%);
+  position: relative;
+  width: min(1080px, 100%);
   min-height: 100vh;
-  padding: 2rem 1.25rem;
+  padding: 3.25rem 1.25rem 2rem;
   box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  gap: 0.75rem;
+  display: grid;
+  gap: 1rem;
+  z-index: 1;
+}
+
+.hero {
+  display: grid;
+  gap: 0.35rem;
+  animation: fade-up 0.45s ease-out both;
+}
+
+.eyebrow {
+  margin: 0;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.74rem;
+  color: var(--text-dim);
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
 }
 
 .status-card {
-  width: min(560px, 100%);
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.6rem 0.8rem;
-  border: 1px solid #8b7a3a;
-  border-radius: 8px;
-  background: #1a1a1a;
-  color: #ffe082;
+  gap: 0.55rem;
+  width: fit-content;
+  max-width: 100%;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(8, 20, 34, 0.72);
+  color: var(--text);
+  backdrop-filter: blur(8px);
 }
 
 .spinner {
-  width: 14px;
-  height: 14px;
-  border: 2px solid #6a6a6a;
-  border-top-color: #ffd700;
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(91, 155, 255, 0.22);
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
 
 .progress-wrap {
-  width: min(560px, 100%);
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
+  width: min(540px, 100%);
+  display: grid;
+  gap: 0.4rem;
 }
 
 .progress-label {
   display: flex;
   justify-content: space-between;
-  font-size: 0.9rem;
-  color: #f0d56d;
+  font-size: 0.82rem;
+  color: var(--text-dim);
 }
 
 .progress-track {
-  height: 10px;
+  height: 8px;
   border-radius: 999px;
   overflow: hidden;
-  background: #3a3a3a;
+  background: rgba(65, 103, 173, 0.2);
+  border: 1px solid rgba(95, 138, 215, 0.25);
 }
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #bca440, #ffd700);
-  transition: width 0.35s ease;
+  background: linear-gradient(90deg, var(--accent), var(--accent-soft));
+  transition: width 0.3s ease;
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  animation: fade-up 0.55s ease-out both;
+}
+
+.action-row button {
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  padding: 0.62rem 1rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  font-family: inherit;
+  color: var(--text);
+  background: linear-gradient(180deg, rgba(10, 28, 49, 0.88), rgba(5, 18, 35, 0.9));
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.action-row button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: var(--accent-soft);
+}
+
+.action-row button:disabled {
+  opacity: 0.52;
+  cursor: not-allowed;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+  animation: fade-up 0.7s ease-out both;
+}
+
+.card {
+  padding: 1rem;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(150deg, rgba(12, 30, 52, 0.84), rgba(6, 14, 28, 0.92)),
+    radial-gradient(circle at 90% -10%, rgba(100, 165, 255, 0.18), transparent 45%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.card h2 {
+  margin: 0 0 0.55rem;
+  font-size: 0.98rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--accent-soft);
+}
+
+.card p {
+  margin: 0.28rem 0;
+  font-size: 0.88rem;
+  word-break: break-word;
+}
+
+.muted {
+  color: var(--text-dim);
+}
+
+.stack {
+  margin-top: 0.5rem;
+  display: grid;
+  gap: 0.26rem;
+}
+
+@media (max-width: 900px) {
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @keyframes spin {
@@ -66,5 +164,16 @@
   }
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

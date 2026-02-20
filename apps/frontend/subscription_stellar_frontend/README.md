@@ -18,7 +18,7 @@ Create `.env` in this folder:
 
 ```env
 VITE_SUBSCRIPTION_CONTRACT_ID=YOUR_SUBSCRIPTION_CONTRACT_ID
-VITE_TOKENIZATION_CONTRACT_ID=YOUR_TOKENIZATION_CONTRACT_ID
+VITE_PAYMENT_CONTRACT_ID=YOUR_PAYMENT_CONTRACT_ID
 VITE_BACKEND_URL=http://localhost:8080
 ```
 
@@ -59,6 +59,10 @@ Exposed operations:
 - `subscribe(userAddress, planId, durationSeconds, amount)`
 - `getSubscription(userAddress)`
 - `getTokenBalance(userAddress)`
+
+For native XLM subscriptions on testnet, `VITE_PAYMENT_CONTRACT_ID` should be set
+to the testnet native SAC contract id:
+- `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC`
 
 ## UX State Model
 

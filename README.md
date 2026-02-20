@@ -44,7 +44,7 @@ cp .env.example .env
 ```
 Set:
 - `VITE_SUBSCRIPTION_CONTRACT_ID`
-- `VITE_TOKENIZATION_CONTRACT_ID`
+- `VITE_PAYMENT_CONTRACT_ID` (testnet native XLM SAC recommended)
 - `VITE_BACKEND_URL`
 
 3. Run both apps from repo root:
@@ -112,7 +112,8 @@ Core contract source:
 ## Notes
 
 - This project targets Stellar testnet endpoints in current frontend code.
-- Keep `VITE_SUBSCRIPTION_CONTRACT_ID` and `VITE_TOKENIZATION_CONTRACT_ID` aligned with deployed contracts on the same network.
+- Keep `VITE_SUBSCRIPTION_CONTRACT_ID` and `VITE_PAYMENT_CONTRACT_ID` aligned with deployed contracts on the same network.
+- Testnet native XLM SAC contract id: `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC`
 
 ## 1-Minute Demo Video
 

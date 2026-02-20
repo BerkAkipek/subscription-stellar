@@ -11,13 +11,16 @@ type SubscriptionView = { planId: number; expiresAt: number } | null;
 type BackendState = {
   subscription: SubscriptionView;
   tokenBalance: string;
+  xlmBalanceStroops: string;
   recentEvents: unknown[];
   observedAt: string;
 } | null;
 
 const BALANCE_CACHE_TTL_MS = 30_000;
 const SUBSCRIPTION_CACHE_TTL_MS = 15_000;
-const SUBSCRIPTION_PAYMENT_AMOUNT = 25;
+const STROOPS_PER_XLM = 10_000_000n;
+const SUBSCRIPTION_PAYMENT_XLM = 1n;
+const SUBSCRIPTION_PAYMENT_AMOUNT = Number(SUBSCRIPTION_PAYMENT_XLM * STROOPS_PER_XLM);
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? "http://localhost:8080";
 
 function balanceCacheKey(address: string) {
@@ -26,6 +29,18 @@ function balanceCacheKey(address: string) {
 
 function subscriptionCacheKey(address: string) {
   return `cache:subscription:${address}`;
+}
+
+function formatXlmFromStroops(stroops: string | null | undefined): string {
+  if (!stroops) return "0";
+  try {
+    const n = BigInt(stroops);
+    const whole = n / STROOPS_PER_XLM;
+    const frac = (n % STROOPS_PER_XLM).toString().padStart(7, "0").replace(/0+$/, "");
+    return frac ? `${whole.toString()}.${frac}` : whole.toString();
+  } catch {
+    return "0";
+  }
 }
 
 function App() {
@@ -71,7 +86,8 @@ function App() {
     const data = await res.json();
     const normalized: BackendState = {
       subscription: data.subscription ?? null,
-      tokenBalance: data.tokenBalance ?? "0",
+      tokenBalance: data.tokenBalance ?? data.xlmBalanceStroops ?? "0",
+      xlmBalanceStroops: data.xlmBalanceStroops ?? data.tokenBalance ?? "0",
       recentEvents: Array.isArray(data.recentEvents) ? data.recentEvents : [],
       observedAt: data.observedAt ?? "",
     };
@@ -168,7 +184,7 @@ function App() {
       const required = BigInt(SUBSCRIPTION_PAYMENT_AMOUNT);
       if (available < required) {
         throw new Error(
-          `Insufficient token balance for subscription: need ${required.toString()}, have ${available.toString()}`
+          `Insufficient XLM balance for subscription: need ${formatXlmFromStroops(required.toString())} XLM, have ${formatXlmFromStroops(available.toString())} XLM`
         );
       }
 
@@ -335,10 +351,11 @@ function App() {
   // UI
   // ==============================
   return (
-    <div
-      className="app"
-    >
-      <h1>Stellar App</h1>
+    <div className="app">
+      <div className="hero">
+        <p className="eyebrow">Testnet Native XLM Billing</p>
+        <h1>Stellar Subscription App</h1>
+      </div>
 
       {statusMessage && (
         <div className="status-card" role="status" aria-live="polite">
@@ -354,92 +371,86 @@ function App() {
             <span>{subscriptionProgress}%</span>
           </div>
           <div className="progress-track">
-            <div
-              className="progress-fill"
-              style={{ width: `${subscriptionProgress}%` }}
-            />
+            <div className="progress-fill" style={{ width: `${subscriptionProgress}%` }} />
           </div>
         </div>
       )}
 
-      {/* CONNECT BUTTON */}
-      {!publicKey && (
-        <button onClick={connectWallet} disabled={connecting}>
-          {connecting ? "Connecting..." : "Connect Wallet"}
-        </button>
-      )}
+      <div className="action-row">
+        {!publicKey && (
+          <button onClick={connectWallet} disabled={connecting}>
+            {connecting ? "Connecting..." : "Connect Wallet"}
+          </button>
+        )}
 
-      {/* WALLET INFO */}
-      {publicKey && (
-        <>
-          <p>
-            Connected wallet: <b>{formatAddress(publicKey)}</b>
+        {publicKey && (
+          <>
+            <button onClick={handleSend} disabled={sending || loading || subscribing}>
+              {sending ? "Sending..." : "Send 1 XLM to myself"}
+            </button>
+            <button onClick={handleSubscribe} disabled={subscribing || loading || sending}>
+              {subscribing ? "Subscribing..." : "Subscribe (1 XLM / hour)"}
+            </button>
+            <button
+              onClick={async () => {
+                await wallet.disconnect();
+                setPublicKey(null);
+              }}
+              disabled={anyBusy}
+            >
+              Disconnect
+            </button>
+          </>
+        )}
+      </div>
+
+      <div className="card-grid">
+        <section className="card">
+          <h2>Wallet</h2>
+          <p className="muted">
+            {publicKey ? `Connected: ${formatAddress(publicKey)}` : "Wallet not connected"}
           </p>
+          <p>XLM (SAC): {formatXlmFromStroops(tokenBalance)} XLM</p>
+          <div className="stack">
+            {loading && <p>Loading balances...</p>}
+            {!loading &&
+              balances.map((b) => (
+                <p key={b.asset + (b.issuer ?? "")}>
+                  {b.asset}: {b.amount}
+                </p>
+              ))}
+            {!loading && balances.length === 0 && <p className="muted">No balances yet</p>}
+          </div>
+        </section>
 
-          <button onClick={handleSend} disabled={sending || loading || subscribing}>
-            {sending ? "Sending..." : "Send 1 XLM to myself"}
-          </button>
+        <section className="card">
+          <h2>Subscription</h2>
+          <p className="muted">Plan 1 • 1 hour • 1 XLM</p>
+          {!subscribing && !subscription && <p>No active subscription</p>}
+          {subscription && (
+            <p>
+              Plan: {subscription.planId}
+              <br />
+              Expires: {new Date(subscription.expiresAt * 1000).toLocaleString()}
+            </p>
+          )}
+        </section>
 
-          <button onClick={handleSubscribe} disabled={subscribing || loading || sending}>
-            {subscribing ? "Subscribing..." : "Subscribe to Plan"}
-          </button>
-
-          <button
-            onClick={async () => {
-              await wallet.disconnect();
-              setPublicKey(null);
-            }}
-            disabled={anyBusy}
-          >
-            Disconnect
-          </button>
-        </>
-      )}
-
-      {/* BALANCES */}
-      <h2>Balances</h2>
-
-      {loading && <p>Loading...</p>}
-
-      {!loading &&
-        balances.map((b) => (
-          <p key={b.asset + (b.issuer ?? "")}>
-            {b.asset}: {b.amount}
-          </p>
-        ))}
-
-      <h2>Token Balance</h2>
-      <p>{tokenBalance ?? "N/A"}</p>
-
-      {/* SUBSCRIPTION */}
-      <h2>Subscription</h2>
-
-      {!subscribing && !subscription && (
-        <p>No active subscription</p>
-      )}
-
-      {subscription && (
-        <p>
-          Plan: {subscription.planId} <br />
-          Expires: {new Date(subscription.expiresAt * 1000).toLocaleString()}
-        </p>
-      )}
-
-      <h2>Backend State</h2>
-      {!backendState && <p>No backend state yet</p>}
-      {backendState && (
-        <p>
-          Observed: {backendState.observedAt || "n/a"} <br />
-          Recent events: {backendState.recentEvents.length}
-        </p>
-      )}
-
-      {/* TX RESULT */}
-      {txHash && (
-        <p>
-          Transaction sent! Hash: {txHash}
-        </p>
-      )}
+        <section className="card">
+          <h2>System</h2>
+          {!backendState && <p className="muted">No backend state yet</p>}
+          {backendState && (
+            <p>
+              Observed: {backendState.observedAt || "n/a"}
+              <br />
+              XLM balance: {formatXlmFromStroops(backendState.xlmBalanceStroops)} XLM
+              <br />
+              Recent events: {backendState.recentEvents.length}
+            </p>
+          )}
+          {txHash && <p className="muted">Last tx: {txHash.slice(0, 18)}...</p>}
+        </section>
+      </div>
     </div>
   );
 }

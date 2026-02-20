@@ -19,7 +19,8 @@ const rpcServer = new rpc.Server(
 const SUBSCRIPTION_CONTRACT_ID =
   import.meta.env.VITE_SUBSCRIPTION_CONTRACT_ID ??
   import.meta.env.VITE_CONTRACT_ID;
-const TOKENIZATION_CONTRACT_ID =
+const PAYMENT_CONTRACT_ID =
+  import.meta.env.VITE_PAYMENT_CONTRACT_ID ??
   import.meta.env.VITE_TOKENIZATION_CONTRACT_ID ??
   import.meta.env.VITE_CONTRACT_ID;
 
@@ -27,8 +28,8 @@ if (!SUBSCRIPTION_CONTRACT_ID) {
   throw new Error("Missing VITE_SUBSCRIPTION_CONTRACT_ID in env");
 }
 
-if (!TOKENIZATION_CONTRACT_ID) {
-  throw new Error("Missing VITE_TOKENIZATION_CONTRACT_ID in env");
+if (!PAYMENT_CONTRACT_ID) {
+  throw new Error("Missing VITE_PAYMENT_CONTRACT_ID in env");
 }
 
 const NETWORK = Networks.TESTNET;
@@ -232,7 +233,7 @@ export async function getSubscription(userAddress: string) {
 }
 
 export async function getTokenBalance(userAddress: string): Promise<string | null> {
-  const contract = new Contract(TOKENIZATION_CONTRACT_ID);
+  const contract = new Contract(PAYMENT_CONTRACT_ID);
   const account = await rpcServer.getAccount(userAddress);
 
   const tx = new TransactionBuilder(account, {

@@ -1,75 +1,43 @@
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+  --bg: #060b14;
+  --bg-2: #0b1630;
+  --line: rgba(124, 171, 255, 0.28);
+  --text: #e8f2ff;
+  --text-dim: #98b0d6;
+  --accent: #4b91ff;
+  --accent-soft: #81b3ff;
+
+  font-family: "Space Grotesk", "Sora", "Manrope", "Segoe UI", sans-serif;
+  line-height: 1.45;
   font-weight: 400;
-
-  color-scheme: dark;
-  color: #ffd700;
-  background-color: #000000;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #ffd700;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #ffec80;
+* {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #000000;
-  color: #ffd700;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 14% 15%, rgba(74, 129, 255, 0.16), transparent 33%),
+    radial-gradient(circle at 86% 8%, rgba(87, 176, 255, 0.12), transparent 32%),
+    linear-gradient(180deg, var(--bg-2), var(--bg));
 }
 
 #root {
   width: 100%;
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid #808080;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  color: #ffd700;
-  background-color: #666666;
-  cursor: pointer;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
-}
-button:hover {
-  background-color: #7a7a7a;
-  border-color: #9a9a9a;
-}
-button:disabled {
-  background-color: #4f4f4f;
-  border-color: #666666;
-  color: #caa93a;
-  cursor: not-allowed;
-}
 button:focus,
 button:focus-visible {
-  outline: 2px solid #ffd700;
+  outline: 2px solid var(--accent-soft);
   outline-offset: 2px;
 }

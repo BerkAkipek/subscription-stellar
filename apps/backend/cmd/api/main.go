@@ -25,11 +25,12 @@ type appStateResponse struct {
 	User           string             `json:"user"`
 	Subscription   *subscriptionState `json:"subscription"`
 	TokenBalance   string             `json:"tokenBalance"`
+	XLMBalance     string             `json:"xlmBalanceStroops"`
 	RecentEvents   []json.RawMessage  `json:"recentEvents"`
 	ObservedAt     string             `json:"observedAt"`
 	Network        string             `json:"network"`
 	SubscriptionID string             `json:"subscriptionContractId"`
-	TokenizationID string             `json:"tokenizationContractId"`
+	PaymentID      string             `json:"paymentContractId"`
 }
 
 func main() {
@@ -62,7 +63,7 @@ func stateHandler(w http.ResponseWriter, r *http.Request) {
 	network := envOrDefault("STELLAR_NETWORK", "testnet")
 	source := envOrDefault("STELLAR_SOURCE", "deployer")
 	subID := envOrDefault("SUBSCRIPTION_CONTRACT_ID", "subscription")
-	tokenID := envOrDefault("TOKENIZATION_CONTRACT_ID", "tokenization")
+	tokenID := envOrDefault("PAYMENT_CONTRACT_ID", envOrDefault("TOKENIZATION_CONTRACT_ID", "tokenization"))
 
 	ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
 	defer cancel()
@@ -89,11 +90,12 @@ func stateHandler(w http.ResponseWriter, r *http.Request) {
 		User:           user,
 		Subscription:   subscription,
 		TokenBalance:   tokenBalance,
+		XLMBalance:     tokenBalance,
 		RecentEvents:   events,
 		ObservedAt:     time.Now().UTC().Format(time.RFC3339),
 		Network:        network,
 		SubscriptionID: subID,
-		TokenizationID: tokenID,
+		PaymentID:      tokenID,
 	}
 	writeJSON(w, http.StatusOK, resp)
 }
