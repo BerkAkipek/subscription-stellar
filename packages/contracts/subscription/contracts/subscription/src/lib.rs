@@ -38,7 +38,7 @@ impl SubscriptionContract {
             expires_at: now + duration_seconds,
         };
 
-        env.storage().instance().set(
+        env.storage().persistent().set(
             &DataKey::Subscription(user.clone()),
             &sub
         );
@@ -54,7 +54,7 @@ impl SubscriptionContract {
         user: Address,
     ) -> Option<Subscription> {
 
-        env.storage().instance().get(
+        env.storage().persistent().get(
             &DataKey::Subscription(user)
         )
     }
@@ -62,7 +62,7 @@ impl SubscriptionContract {
     pub fn cancel(env: Env, user: Address) {
         user.require_auth();
 
-        env.storage().instance().remove(
+        env.storage().persistent().remove(
             &DataKey::Subscription(user.clone())
         );
 
