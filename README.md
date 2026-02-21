@@ -245,7 +245,7 @@ Key contract behavior:
 
 ## Demo
 
-- Live Demo: `https://<your-project>.vercel.app`
+- Live Demo: `https://subscription-stellar.vercel.app/`
 - Video: [Watch the 1-minute demo](https://www.loom.com/share/96419e34835643668225477a101b800e)
 
 ## License
