@@ -154,7 +154,16 @@ describe("contract client", () => {
       if (!scValLike) {
         throw new Error("invalid mock scval");
       }
-      return BigInt(scValLike.value());
+      const raw = scValLike.value();
+      if (
+        typeof raw === "string" ||
+        typeof raw === "number" ||
+        typeof raw === "bigint" ||
+        typeof raw === "boolean"
+      ) {
+        return BigInt(raw);
+      }
+      throw new Error("invalid mock scval value");
     });
 
     mockRpcServer.getAccount.mockResolvedValue({ id: "ACCOUNT" });

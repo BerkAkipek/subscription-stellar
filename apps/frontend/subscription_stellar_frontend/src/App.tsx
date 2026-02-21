@@ -46,6 +46,7 @@ function App() {
 
   const [balances, setBalances] = useState<Balance[]>([]);
   const [tokenBalance, setTokenBalance] = useState<string | null>(null);
+  const [payoutBalance, setPayoutBalance] = useState<string | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionView>(null);
   const [backendState, setBackendState] = useState<BackendState>(null);
   const [subscriptionProgress, setSubscriptionProgress] = useState(0);
@@ -150,6 +151,8 @@ function App() {
       );
 
       setTxHash(hash);
+      const latestPayoutBalance = await getTokenBalance(PAYOUT_ADDRESS);
+      setPayoutBalance(latestPayoutBalance);
       setSendStatus("success");
       setStatusMessage("Transaction submitted.");
     } catch (e) {
@@ -214,6 +217,8 @@ function App() {
       setSubscription(sub);
       const token = await getTokenBalance(publicKey);
       setTokenBalance(token);
+      const latestPayoutBalance = await getTokenBalance(PAYOUT_ADDRESS);
+      setPayoutBalance(latestPayoutBalance);
       setCached(subscriptionCacheKey(publicKey), sub, SUBSCRIPTION_CACHE_TTL_MS);
       await refreshBackendState(publicKey);
       setSubscribeStatus("success");
@@ -292,6 +297,30 @@ function App() {
   // ==============================
   // CLEAR STATE ON DISCONNECT
   // ==============================
+  useEffect(() => {
+    let cancelled = false;
+
+    const refreshPayout = async () => {
+      try {
+        const latest = await getTokenBalance(PAYOUT_ADDRESS);
+        if (cancelled) return;
+        setPayoutBalance(latest);
+      } catch (e) {
+        console.error("Payout balance refresh failed:", e);
+      }
+    };
+
+    void refreshPayout();
+    const interval = setInterval(() => {
+      void refreshPayout();
+    }, 10000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
+
   useEffect(() => {
     if (!publicKey) {
       setBalances([]);
@@ -387,7 +416,7 @@ function App() {
                   onClick={handleSend}
                   disabled={sending || loading || subscribing}
                 >
-                  {sending ? "Sending..." : "Send 1 XLM to payout wallet"}
+                  {sending ? "Sending..." : "Send 1 XLM"}
                 </button>
                 <button
                   className="btn btn-primary"
@@ -446,6 +475,7 @@ function App() {
           <section className="card">
             <h2>System</h2>
             <p className="muted">Payout wallet: {formatAddress(PAYOUT_ADDRESS)}</p>
+            <p>Treasury XLM (SAC): {formatXlmFromStroops(payoutBalance)} XLM</p>
             {!backendState && <p className="muted">No backend state yet</p>}
             {backendState && (
               <p>

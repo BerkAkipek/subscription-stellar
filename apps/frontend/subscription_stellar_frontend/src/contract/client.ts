@@ -67,6 +67,17 @@ function asScValLike(value: unknown): ScValLike | null {
   return value as ScValLike;
 }
 
+function asSdkScVal(value: unknown): Parameters<typeof scValToBigInt>[0] | null {
+  const maybeScVal = asScValLike(value);
+  if (!maybeScVal) {
+    return null;
+  }
+  if (typeof maybeScVal.switch !== "function" || typeof maybeScVal.value !== "function") {
+    return null;
+  }
+  return value as Parameters<typeof scValToBigInt>[0];
+}
+
 function getScValArm(value: unknown): string | null {
   const maybeScVal = asScValLike(value);
   const maybeSwitch = maybeScVal?.switch?.();
@@ -318,12 +329,15 @@ export async function getTokenBalance(userAddress: string): Promise<string | nul
   if (!retval) return null;
 
   try {
-    return scValToBigInt(retval).toString();
-  } catch {
-    try {
-      return retval.value().toString();
-    } catch {
-      return null;
+    const sdkScVal = asSdkScVal(retval);
+    if (sdkScVal) {
+      return scValToBigInt(sdkScVal).toString();
     }
+  } catch {
+    // Fall through to best-effort extraction.
   }
+
+  const fallback = getScValValue(retval);
+  if (fallback == null) return null;
+  return String(fallback);
 }
