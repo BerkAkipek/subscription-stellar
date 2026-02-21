@@ -1,3 +1,3 @@
 module github.com/BerkAkipek/subscription_stellar/stellar
 
-go 1.25.5
+go 1.25.0
