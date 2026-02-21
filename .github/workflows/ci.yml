@@ -45,6 +45,10 @@ jobs:
   frontend:
     name: Frontend (Node)
     runs-on: ubuntu-latest
+    env:
+      VITE_SUBSCRIPTION_CONTRACT_ID: TEST_SUBSCRIPTION_CONTRACT_ID
+      VITE_PAYMENT_CONTRACT_ID: TEST_PAYMENT_CONTRACT_ID
+      VITE_BACKEND_URL: http://localhost:8080
     defaults:
       run:
         working-directory: apps/frontend/subscription_stellar_frontend
