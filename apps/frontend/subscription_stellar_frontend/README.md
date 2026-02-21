@@ -19,7 +19,7 @@ Create `.env` in this folder:
 ```env
 VITE_SUBSCRIPTION_CONTRACT_ID=YOUR_SUBSCRIPTION_CONTRACT_ID
 VITE_PAYMENT_CONTRACT_ID=YOUR_PAYMENT_CONTRACT_ID
-VITE_BACKEND_URL=https://subscription-stellar.onrender.com
+VITE_BACKEND_URL=https://p01--subscription-stellar--fnptwgvfdjdv.code.run
 ```
 
 You can copy the example:

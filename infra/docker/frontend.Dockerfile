@@ -9,7 +9,7 @@ COPY apps/frontend/subscription_stellar_frontend/ ./
 
 ARG VITE_SUBSCRIPTION_CONTRACT_ID
 ARG VITE_PAYMENT_CONTRACT_ID
-ARG VITE_BACKEND_URL=https://subscription-stellar.onrender.com
+ARG VITE_BACKEND_URL=https://p01--subscription-stellar--fnptwgvfdjdv.code.run
 
 ENV VITE_SUBSCRIPTION_CONTRACT_ID=${VITE_SUBSCRIPTION_CONTRACT_ID}
 ENV VITE_PAYMENT_CONTRACT_ID=${VITE_PAYMENT_CONTRACT_ID}

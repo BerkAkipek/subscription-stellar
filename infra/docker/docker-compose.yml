@@ -30,7 +30,7 @@ services:
       args:
         VITE_SUBSCRIPTION_CONTRACT_ID: ${VITE_SUBSCRIPTION_CONTRACT_ID}
         VITE_PAYMENT_CONTRACT_ID: ${VITE_PAYMENT_CONTRACT_ID}
-        VITE_BACKEND_URL: ${VITE_BACKEND_URL:-https://subscription-stellar.onrender.com}
+        VITE_BACKEND_URL: ${VITE_BACKEND_URL:-https://p01--subscription-stellar--fnptwgvfdjdv.code.run}
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost/ || exit 1"]

@@ -3,7 +3,13 @@
 [![CI](https://github.com/BerkAkipek/subscription-stellar/actions/workflows/ci.yml/badge.svg)](https://github.com/BerkAkipek/subscription-stellar/actions/workflows/ci.yml)
 [![CD](https://github.com/BerkAkipek/subscription-stellar/actions/workflows/cd.yml/badge.svg)](https://github.com/BerkAkipek/subscription-stellar/actions/workflows/cd.yml)
 
-Production-oriented monorepo for a Stellar Testnet subscription application with native XLM settlement via Soroban contracts.
+Production-oriented monorepo for a Stellar Testnet subscription application with native XLM settlement via Soroban smart contracts.
+
+## Live Links
+
+- Live Demo (Frontend): https://subscription-stellar.vercel.app/
+- Backend Health: https://p01--subscription-stellar--fnptwgvfdjdv.code.run/healthz
+- Demo Video: https://www.loom.com/share/96419e34835643668225477a101b800e
 
 ## Submission Checklist
 
@@ -13,9 +19,9 @@ Production-oriented monorepo for a Stellar Testnet subscription application with
 - Mobile responsive screenshot: `docs/screenshots/responsive_ss.png`
 - CI/CD pipeline status: badges at top of this README (CI + CD workflows)
 - Contract addresses:
-- Subscription contract: `CA2VD4N35RGAVDHCK4WXGZUJPS2NCFOT3BRPMCHFQ6SSQXVOFW3LLFFJ`
-- Payment contract (native XLM SAC): `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC`
-- Inter-contract transaction hash (`subscribe` call): `ee4dea89c518493f5ed8421f05d6c8fcc5a7e677673d53668dabb2e9afd696c2`
+  - Subscription contract: `CA2VD4N35RGAVDHCK4WXGZUJPS2NCFOT3BRPMCHFQ6SSQXVOFW3LLFFJ`
+  - Payment contract (native XLM SAC): `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC`
+  - Inter-contract transaction hash (`subscribe` call): `ee4dea89c518493f5ed8421f05d6c8fcc5a7e677673d53668dabb2e9afd696c2`
 - Custom token/pool address: `N/A` (uses native XLM via Stellar Asset Contract; no custom token or pool deployed)
 
 ## Overview
@@ -82,7 +88,7 @@ Path: `apps/frontend/subscription_stellar_frontend/.env`
 VITE_SUBSCRIPTION_CONTRACT_ID=CA2VD4N35RGAVDHCK4WXGZUJPS2NCFOT3BRPMCHFQ6SSQXVOFW3LLFFJ
 VITE_PAYMENT_CONTRACT_ID=CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC
 VITE_PAYOUT_ADDRESS=GCEUZVV7XV3UPXKZKIMX2T3VZK6POIKMIOL3XM3XNZWXEK4CVVGNIWD2
-VITE_BACKEND_URL=https://subscription-stellar.onrender.com
+VITE_BACKEND_URL=https://p01--subscription-stellar--fnptwgvfdjdv.code.run
 ```
 
 ### Backend
@@ -192,15 +198,13 @@ cargo fmt --all --check
 cargo check --workspace
 ```
 
-Test evidence screenshot:
+Test evidence screenshots:
 
 ![Frontend and backend tests passing](docs/screenshots/tests-passing-small.svg)
 
+![Frontend tests passing](docs/screenshots/frontend-tests-passing.svg)
+
 ## Screenshots (Responsive UI)
-
-Capture screenshots from your running app and place them under `docs/screenshots/`, for example:
-
-- `docs/screenshots/app-mobile.png`
 
 ![Mobile view](docs/screenshots/responsive_ss.png)
 
@@ -246,10 +250,10 @@ Key contract behavior:
 - Use `render.yaml` at repo root for one-click service provisioning.
 - In Render, create a new Blueprint service from this repository.
 - Confirm env vars in Render:
-- `SUBSCRIPTION_CONTRACT_ID=CA2VD4N35RGAVDHCK4WXGZUJPS2NCFOT3BRPMCHFQ6SSQXVOFW3LLFFJ`.
-- `PAYMENT_CONTRACT_ID=CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC`.
-- `STELLAR_NETWORK=testnet`.
-- Backend health endpoint after deploy: `https://<your-render-service>.onrender.com/healthz`.
+  - `SUBSCRIPTION_CONTRACT_ID=CA2VD4N35RGAVDHCK4WXGZUJPS2NCFOT3BRPMCHFQ6SSQXVOFW3LLFFJ`
+  - `PAYMENT_CONTRACT_ID=CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC`
+  - `STELLAR_NETWORK=testnet`
+- Backend health endpoint after deploy: `https://p01--subscription-stellar--fnptwgvfdjdv.code.run/healthz`
 
 ### 2) Deploy Frontend (Vercel)
 
@@ -258,21 +262,11 @@ Key contract behavior:
 - Build command: `npm run build`
 - Output directory: `dist`
 - Add environment variables in Vercel:
-- `VITE_SUBSCRIPTION_CONTRACT_ID=CA2VD4N35RGAVDHCK4WXGZUJPS2NCFOT3BRPMCHFQ6SSQXVOFW3LLFFJ`.
-- `VITE_PAYMENT_CONTRACT_ID=CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC`.
-- `VITE_PAYOUT_ADDRESS=GCEUZVV7XV3UPXKZKIMX2T3VZK6POIKMIOL3XM3XNZWXEK4CVVGNIWD2`.
-- `VITE_BACKEND_URL=https://<your-render-service>.onrender.com`.
+  - `VITE_SUBSCRIPTION_CONTRACT_ID=CA2VD4N35RGAVDHCK4WXGZUJPS2NCFOT3BRPMCHFQ6SSQXVOFW3LLFFJ`
+  - `VITE_PAYMENT_CONTRACT_ID=CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC`
+  - `VITE_PAYOUT_ADDRESS=GCEUZVV7XV3UPXKZKIMX2T3VZK6POIKMIOL3XM3XNZWXEK4CVVGNIWD2`
+  - `VITE_BACKEND_URL=https://p01--subscription-stellar--fnptwgvfdjdv.code.run`
 - `vercel.json` is included for SPA route fallback.
-
-### 3) Publish Live Demo Link
-
-- After Vercel deploy, copy your URL (example: `https://<project>.vercel.app`).
-- Replace the `Live Demo` entry in the section below.
-
-## Demo
-
-- Live Demo: `https://subscription-stellar.vercel.app/`
-- Video: [Watch the 1-minute demo](https://www.loom.com/share/96419e34835643668225477a101b800e)
 
 ## License
 

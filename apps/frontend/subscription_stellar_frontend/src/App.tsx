@@ -24,7 +24,7 @@ const STROOPS_PER_XLM = 10_000_000n;
 const SUBSCRIPTION_PAYMENT_XLM = 1n;
 const SUBSCRIPTION_PAYMENT_AMOUNT = Number(SUBSCRIPTION_PAYMENT_XLM * STROOPS_PER_XLM);
 const BACKEND_URL =
-  import.meta.env.VITE_BACKEND_URL ?? "https://subscription-stellar.onrender.com";
+  import.meta.env.VITE_BACKEND_URL ?? "https://p01--subscription-stellar--fnptwgvfdjdv.code.run";
 const PAYOUT_ADDRESS = resolvePayoutAddress(import.meta.env.VITE_PAYOUT_ADDRESS);
 
 function balanceCacheKey(address: string) {
