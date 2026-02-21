@@ -74,6 +74,7 @@ jobs:
           tags: ${{ steps.meta_frontend.outputs.tags }}
           labels: ${{ steps.meta_frontend.outputs.labels }}
           build-args: |
-            VITE_SUBSCRIPTION_CONTRACT_ID=${{ vars.VITE_SUBSCRIPTION_CONTRACT_ID }}
-            VITE_PAYMENT_CONTRACT_ID=${{ vars.VITE_PAYMENT_CONTRACT_ID }}
-            VITE_BACKEND_URL=${{ vars.VITE_BACKEND_URL || '/api' }}
+            VITE_SUBSCRIPTION_CONTRACT_ID=${{ vars.VITE_SUBSCRIPTION_CONTRACT_ID || 'CA2VD4N35RGAVDHCK4WXGZUJPS2NCFOT3BRPMCHFQ6SSQXVOFW3LLFFJ' }}
+            VITE_PAYMENT_CONTRACT_ID=${{ vars.VITE_PAYMENT_CONTRACT_ID || 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC' }}
+            VITE_PAYOUT_ADDRESS=${{ vars.VITE_PAYOUT_ADDRESS || 'GCEUZVV7XV3UPXKZKIMX2T3VZK6POIKMIOL3XM3XNZWXEK4CVVGNIWD2' }}
+            VITE_BACKEND_URL=${{ vars.VITE_BACKEND_URL || 'https://subscription-stellar.onrender.com' }}
