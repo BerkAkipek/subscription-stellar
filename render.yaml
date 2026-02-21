@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: subscription-stellar-backend
+    runtime: docker
+    dockerfilePath: ./infra/docker/backend.Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /healthz
+    envVars:
+      - key: STELLAR_NETWORK
+        value: testnet
+      - key: SUBSCRIPTION_CONTRACT_ID
+        value: CA2VD4N35RGAVDHCK4WXGZUJPS2NCFOT3BRPMCHFQ6SSQXVOFW3LLFFJ
+      - key: PAYMENT_CONTRACT_ID
+        value: CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC

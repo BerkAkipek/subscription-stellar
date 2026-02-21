@@ -34,7 +34,11 @@ type appStateResponse struct {
 }
 
 func main() {
-	addr := envOrDefault("BACKEND_ADDR", ":8080")
+	addr := strings.TrimSpace(os.Getenv("BACKEND_ADDR"))
+	if addr == "" {
+		port := envOrDefault("PORT", "8080")
+		addr = ":" + port
+	}
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {

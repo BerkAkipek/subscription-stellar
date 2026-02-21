@@ -213,8 +213,39 @@ Key contract behavior:
 - `init(admin, token_contract, treasury)` stores immutable runtime config.
 - `subscribe(user, plan_id, duration_seconds, amount)` transfers `amount` from `user` to `treasury`.
 
+## Deployment
+
+### 1) Deploy Backend (Render)
+
+- Use `render.yaml` at repo root for one-click service provisioning.
+- In Render, create a new Blueprint service from this repository.
+- Confirm env vars in Render:
+- `SUBSCRIPTION_CONTRACT_ID=CA2VD4N35RGAVDHCK4WXGZUJPS2NCFOT3BRPMCHFQ6SSQXVOFW3LLFFJ`.
+- `PAYMENT_CONTRACT_ID=CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC`.
+- `STELLAR_NETWORK=testnet`.
+- Backend health endpoint after deploy: `https://<your-render-service>.onrender.com/healthz`.
+
+### 2) Deploy Frontend (Vercel)
+
+- Import this repository in Vercel.
+- Set project root to: `apps/frontend/subscription_stellar_frontend`
+- Build command: `npm run build`
+- Output directory: `dist`
+- Add environment variables in Vercel:
+- `VITE_SUBSCRIPTION_CONTRACT_ID=CA2VD4N35RGAVDHCK4WXGZUJPS2NCFOT3BRPMCHFQ6SSQXVOFW3LLFFJ`.
+- `VITE_PAYMENT_CONTRACT_ID=CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC`.
+- `VITE_PAYOUT_ADDRESS=GCEUZVV7XV3UPXKZKIMX2T3VZK6POIKMIOL3XM3XNZWXEK4CVVGNIWD2`.
+- `VITE_BACKEND_URL=https://<your-render-service>.onrender.com`.
+- `vercel.json` is included for SPA route fallback.
+
+### 3) Publish Live Demo Link
+
+- After Vercel deploy, copy your URL (example: `https://<project>.vercel.app`).
+- Replace the `Live Demo` entry in the section below.
+
 ## Demo
 
+- Live Demo: `https://<your-project>.vercel.app`
 - Video: [Watch the 1-minute demo](https://www.loom.com/share/96419e34835643668225477a101b800e)
 
 ## License
