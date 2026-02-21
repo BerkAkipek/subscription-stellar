@@ -340,105 +340,122 @@ function App() {
   // UI
   // ==============================
   return (
-    <div className="app">
-      <div className="hero">
-        <p className="eyebrow">Testnet Native XLM Billing</p>
-        <h1>Stellar Subscription App</h1>
-      </div>
-
-      {statusMessage && (
-        <div className="status-card" role="status" aria-live="polite">
-          {anyBusy && <span className="spinner" aria-hidden="true" />}
-          <span>{statusMessage}</span>
-        </div>
-      )}
-
-      {subscribing && (
-        <div className="progress-wrap" aria-live="polite">
-          <div className="progress-label">
-            <span>{subscriptionStep || "Updating subscription"}</span>
-            <span>{subscriptionProgress}%</span>
-          </div>
-          <div className="progress-track">
-            <div className="progress-fill" style={{ width: `${subscriptionProgress}%` }} />
-          </div>
-        </div>
-      )}
-
-      <div className="action-row">
-        {!publicKey && (
-          <button onClick={connectWallet} disabled={connecting}>
-            {connecting ? "Connecting..." : "Connect Wallet"}
-          </button>
-        )}
-
-        {publicKey && (
-          <>
-            <button onClick={handleSend} disabled={sending || loading || subscribing}>
-              {sending ? "Sending..." : "Send 1 XLM to myself"}
-            </button>
-            <button onClick={handleSubscribe} disabled={subscribing || loading || sending}>
-              {subscribing ? "Subscribing..." : "Subscribe (1 XLM / hour)"}
-            </button>
-            <button
-              onClick={async () => {
-                await wallet.disconnect();
-                setPublicKey(null);
-              }}
-              disabled={anyBusy}
-            >
-              Disconnect
-            </button>
-          </>
-        )}
-      </div>
-
-      <div className="card-grid">
-        <section className="card">
-          <h2>Wallet</h2>
-          <p className="muted">
-            {publicKey ? `Connected: ${formatAddress(publicKey)}` : "Wallet not connected"}
+    <div className="app-shell">
+      <div className="app">
+        <div className="hero">
+          <p className="eyebrow">Testnet Native XLM Billing</p>
+          <h1>Stellar Subscription App</h1>
+          <p className="hero-copy">
+            Connect your wallet, execute payment flows, and inspect live subscription state in a
+            single dashboard.
           </p>
-          <p>XLM (SAC): {formatXlmFromStroops(tokenBalance)} XLM</p>
-          <div className="stack">
-            {loading && <p>Loading balances...</p>}
-            {!loading &&
-              balances.map((b) => (
-                <p key={b.asset + (b.issuer ?? "")}>
-                  {b.asset}: {b.amount}
-                </p>
-              ))}
-            {!loading && balances.length === 0 && <p className="muted">No balances yet</p>}
+        </div>
+
+        {statusMessage && (
+          <div className="status-card" role="status" aria-live="polite">
+            {anyBusy && <span className="spinner" aria-hidden="true" />}
+            <span>{statusMessage}</span>
           </div>
-        </section>
+        )}
 
-        <section className="card">
-          <h2>Subscription</h2>
-          <p className="muted">Plan 1 • 1 hour • 1 XLM</p>
-          {!subscribing && !subscription && <p>No active subscription</p>}
-          {subscription && (
-            <p>
-              Plan: {subscription.planId}
-              <br />
-              Expires: {new Date(subscription.expiresAt * 1000).toLocaleString()}
-            </p>
-          )}
-        </section>
+        {subscribing && (
+          <div className="progress-wrap" aria-live="polite">
+            <div className="progress-label">
+              <span>{subscriptionStep || "Updating subscription"}</span>
+              <span>{subscriptionProgress}%</span>
+            </div>
+            <div className="progress-track">
+              <div className="progress-fill" style={{ width: `${subscriptionProgress}%` }} />
+            </div>
+          </div>
+        )}
 
-        <section className="card">
-          <h2>System</h2>
-          {!backendState && <p className="muted">No backend state yet</p>}
-          {backendState && (
-            <p>
-              Observed: {backendState.observedAt || "n/a"}
-              <br />
-              XLM balance: {formatXlmFromStroops(backendState.xlmBalanceStroops)} XLM
-              <br />
-              Recent events: {backendState.recentEvents.length}
+        <div className="action-panel">
+          <div className="action-row">
+            {!publicKey && (
+              <button className="btn btn-primary" onClick={connectWallet} disabled={connecting}>
+                {connecting ? "Connecting..." : "Connect Wallet"}
+              </button>
+            )}
+
+            {publicKey && (
+              <>
+                <button
+                  className="btn"
+                  onClick={handleSend}
+                  disabled={sending || loading || subscribing}
+                >
+                  {sending ? "Sending..." : "Send 1 XLM to myself"}
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={handleSubscribe}
+                  disabled={subscribing || loading || sending}
+                >
+                  {subscribing ? "Subscribing..." : "Subscribe (1 XLM / hour)"}
+                </button>
+                <button
+                  className="btn btn-ghost"
+                  onClick={async () => {
+                    await wallet.disconnect();
+                    setPublicKey(null);
+                  }}
+                  disabled={anyBusy}
+                >
+                  Disconnect
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="card-grid">
+          <section className="card">
+            <h2>Wallet</h2>
+            <p className="muted">
+              {publicKey ? `Connected: ${formatAddress(publicKey)}` : "Wallet not connected"}
             </p>
-          )}
-          {txHash && <p className="muted">Last tx: {txHash.slice(0, 18)}...</p>}
-        </section>
+            <p>XLM (SAC): {formatXlmFromStroops(tokenBalance)} XLM</p>
+            <div className="stack">
+              {loading && <p>Loading balances...</p>}
+              {!loading &&
+                balances.map((b) => (
+                  <p key={b.asset + (b.issuer ?? "")}>
+                    {b.asset}: {b.amount}
+                  </p>
+                ))}
+              {!loading && balances.length === 0 && <p className="muted">No balances yet</p>}
+            </div>
+          </section>
+
+          <section className="card">
+            <h2>Subscription</h2>
+            <p className="muted">Plan 1 • 1 hour • 1 XLM</p>
+            {!subscribing && !subscription && <p>No active subscription</p>}
+            {subscription && (
+              <p>
+                Plan: {subscription.planId}
+                <br />
+                Expires: {new Date(subscription.expiresAt * 1000).toLocaleString()}
+              </p>
+            )}
+          </section>
+
+          <section className="card">
+            <h2>System</h2>
+            {!backendState && <p className="muted">No backend state yet</p>}
+            {backendState && (
+              <p>
+                Observed: {backendState.observedAt || "n/a"}
+                <br />
+                XLM balance: {formatXlmFromStroops(backendState.xlmBalanceStroops)} XLM
+                <br />
+                Recent events: {backendState.recentEvents.length}
+              </p>
+            )}
+            {txHash && <p className="muted">Last tx: {txHash.slice(0, 18)}...</p>}
+          </section>
+        </div>
       </div>
     </div>
   );
