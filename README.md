@@ -94,33 +94,30 @@ make r
 
 The repository now includes Docker files in `infra/docker`.
 
-1. Create Docker env file:
+1. Start with Docker via Makefile:
 
 ```bash
-cp infra/docker/.env.backend.example infra/docker/.env.backend
+make docker-up
 ```
 
-2. Start both services:
+This command auto-creates `infra/docker/.env.backend` from the example if missing.
 
-```bash
-docker compose -f infra/docker/docker-compose.yml --env-file infra/docker/.env.backend up --build
-```
-
-3. Open:
+2. Open:
 
 - Frontend: `http://localhost:5173`
 - Backend health: `http://localhost:8080/healthz`
 
-4. Stop:
+3. Stop:
 
 ```bash
-docker compose -f infra/docker/docker-compose.yml --env-file infra/docker/.env.backend down
+make docker-down
 ```
 
 Notes:
 - `infra/docker/backend.Dockerfile` installs `stellar` CLI (required by backend runtime calls).
 - Frontend is built as static assets and served via Nginx (`infra/docker/frontend.Dockerfile`).
 - To change contract ids or network values, edit `infra/docker/.env.backend`.
+- Useful commands: `make docker-logs`, `make docker-ps`, `make docker-env`.
 
 ## Docker Production Override
 
@@ -133,23 +130,13 @@ Use the production override for server deployment:
 Run:
 
 ```bash
-FRONTEND_PORT=80 BACKEND_BIND=127.0.0.1:8080 \
-docker compose \
-  -f infra/docker/docker-compose.yml \
-  -f infra/docker/compose.prod.yml \
-  --env-file infra/docker/.env.backend \
-  up -d --build
+make docker-prod-up
 ```
 
 Stop:
 
 ```bash
-FRONTEND_PORT=80 BACKEND_BIND=127.0.0.1:8080 \
-docker compose \
-  -f infra/docker/docker-compose.yml \
-  -f infra/docker/compose.prod.yml \
-  --env-file infra/docker/.env.backend \
-  down
+make docker-prod-down
 ```
 
 ## Backend API
