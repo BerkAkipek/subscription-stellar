@@ -1,6 +1,22 @@
 # Stellar Subscription Service
 
+[![CI](https://github.com/BerkAkipek/subscription-stellar/actions/workflows/ci.yml/badge.svg)](https://github.com/BerkAkipek/subscription-stellar/actions/workflows/ci.yml)
+[![CD](https://github.com/BerkAkipek/subscription-stellar/actions/workflows/cd.yml/badge.svg)](https://github.com/BerkAkipek/subscription-stellar/actions/workflows/cd.yml)
+
 Production-oriented monorepo for a Stellar Testnet subscription application with native XLM settlement via Soroban contracts.
+
+## Submission Checklist
+
+- Public GitHub repository: `https://github.com/BerkAkipek/subscription-stellar`
+- Meaningful commits: `32` (current `HEAD` count)
+- Live demo (frontend): `https://subscription-stellar.vercel.app/`
+- Mobile responsive screenshot: `docs/screenshots/responsive_ss.png`
+- CI/CD pipeline status: badges at top of this README (CI + CD workflows)
+- Contract addresses:
+- Subscription contract: `CA2VD4N35RGAVDHCK4WXGZUJPS2NCFOT3BRPMCHFQ6SSQXVOFW3LLFFJ`
+- Payment contract (native XLM SAC): `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC`
+- Inter-contract transaction hash (`subscribe` call): `ee4dea89c518493f5ed8421f05d6c8fcc5a7e677673d53668dabb2e9afd696c2`
+- Custom token/pool address: `N/A` (uses native XLM via Stellar Asset Contract; no custom token or pool deployed)
 
 ## Overview
 
@@ -180,9 +196,19 @@ Test evidence screenshot:
 
 ![Frontend and backend tests passing](docs/screenshots/tests-passing-small.svg)
 
+## Screenshots (Responsive UI)
+
+Capture screenshots from your running app and place them under `docs/screenshots/`, for example:
+
+- `docs/screenshots/app-mobile.png`
+
+![Mobile view](docs/screenshots/responsive_ss.png)
+
 ## CI/CD (GitHub Actions)
 
 Workflows live in `.github/workflows`.
+
+Pipeline status is shown by the badges at the top of this README.
 
 CI (`ci.yml`):
 
