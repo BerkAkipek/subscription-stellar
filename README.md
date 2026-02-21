@@ -157,22 +157,44 @@ make docker-prod-down
 
 ## CI/CD (GitHub Actions)
 
-The repo includes two workflows under `.github/workflows`:
+Workflows are defined in `.github/workflows/`.
 
-- `ci.yml`: runs on pull requests and pushes to `main`
-- Backend checks: `gofmt`, `go vet`, `go test`
-- Frontend checks: `npm ci`, `npm test -- --run`, `npm run build`
-- Contracts checks: `cargo fmt --check`, `cargo check --workspace`
-- `cd.yml`: runs on pushes to `main`, `v*` tags, and manual dispatch
-- CD publishes:
-- `ghcr.io/<owner>/subscription-stellar-backend`
-- `ghcr.io/<owner>/subscription-stellar-frontend`
+### CI Workflow (`ci.yml`)
 
-Set these repository variables for frontend image build args (Settings -> Secrets and variables -> Actions -> Variables):
+- Trigger: pull requests to any branch.
+- Trigger: pushes to `main`.
+- Backend job (`apps/backend`): `gofmt` check, `go vet`, `go test ./...`.
+- Frontend job (`apps/frontend/subscription_stellar_frontend`): `npm ci`, `npm test -- --run`, `npm run build`.
+- Contracts job (`packages/contracts/subscription`): `cargo fmt --all --check`, `cargo check --workspace`.
 
-- `VITE_SUBSCRIPTION_CONTRACT_ID`
-- `VITE_PAYMENT_CONTRACT_ID`
-- `VITE_BACKEND_URL` (optional, defaults to `/api`)
+### CD Workflow (`cd.yml`)
+
+- Trigger: pushes to `main`.
+- Trigger: pushes of tags matching `v*` (example: `v1.0.0`).
+- Trigger: manual run (`workflow_dispatch`) from the Actions tab.
+- Action: builds and pushes Docker images to GitHub Container Registry (GHCR).
+- Backend image: `ghcr.io/<owner>/subscription-stellar-backend`.
+- Frontend image: `ghcr.io/<owner>/subscription-stellar-frontend`.
+
+### GitHub Repository Settings Required
+
+- Set `Settings` -> `Actions` -> `General` -> Workflow permissions to `Read and write permissions` (required for GHCR push).
+- Add repository variables in `Settings` -> `Secrets and variables` -> `Actions` -> `Variables`.
+- Required variable: `VITE_SUBSCRIPTION_CONTRACT_ID`.
+- Required variable: `VITE_PAYMENT_CONTRACT_ID`.
+- Optional variable: `VITE_BACKEND_URL` (defaults to `/api`).
+
+### How to Run
+
+- Automatic: push code to `main` to run CI and CD.
+- Automatic: push a tag like `v1.0.0` to run CD.
+- Manual: `Actions` -> `CD` -> `Run workflow` -> select branch -> `Run workflow`.
+
+### Verification
+
+- In the `Actions` tab, CI jobs should pass: Backend, Frontend, Contracts.
+- In the `Actions` tab, CD job should pass: `Publish Docker images to GHCR`.
+- In GitHub `Packages`, confirm backend and frontend images are published.
 
 ## Testing
 
