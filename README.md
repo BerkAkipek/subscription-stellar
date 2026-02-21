@@ -1,14 +1,15 @@
 # Stellar Subscription Service
 
-Monorepo for a Stellar Testnet subscription app with native XLM billing.
+Production-oriented monorepo for a Stellar Testnet subscription application with native XLM settlement via Soroban contracts.
 
-## Stack
+## Overview
 
 - Frontend: React + TypeScript + Vite
-- Backend: Go API
-- Contracts: Soroban (Rust)
+- Backend: Go HTTP API
+- Smart contracts: Soroban (Rust)
+- Runtime target: Stellar Testnet
 
-## Repository Structure
+## Repository Layout
 
 ```text
 .
@@ -19,197 +20,144 @@ Monorepo for a Stellar Testnet subscription app with native XLM billing.
 │   ├── contracts/subscription
 │   └── stellar
 ├── infra
+│   ├── docker
+│   └── env
 └── Makefile
 ```
 
-## Current Testnet Contracts
+## Current Testnet Configuration
 
-- Subscription contract: `CBPVGE3CNJUFF46O6VLXZXQO2F35JJN2UO2D2RUSY5WPJUMLBT6KVGQ4`
-- Native XLM SAC (payment contract): `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC`
+- Subscription contract: `CA2VD4N35RGAVDHCK4WXGZUJPS2NCFOT3BRPMCHFQ6SSQXVOFW3LLFFJ`
+- Payment contract (native XLM SAC): `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC`
+- Payout/Treasury wallet: `GCEUZVV7XV3UPXKZKIMX2T3VZK6POIKMIOL3XM3XNZWXEK4CVVGNIWD2`
 
-## Features
+## Product Features
 
-- Wallet connect/disconnect (wallet selector/freighter providers)
-- Send 1 XLM to self (wallet tx sanity path)
-- Subscribe on-chain with native XLM payment
-- Inter-contract transfer during subscribe (`subscription -> native SAC transfer`)
-- Read subscription state (`plan_id`, `expires_at`)
-- Read XLM SAC balance (stroops) and render as XLM
-- Backend observed state polling (`/api/state`) with latest subscription, balance, and recent events
-- Progress + loading states for async actions
-- Client-side cache for faster hydration:
-- `balances` TTL: 30s
-- `subscription` TTL: 15s
-- One-page futuristic/minimal UI optimized for desktop and mobile
+- Wallet connect/disconnect through selector/freighter providers.
+- `Send 1 XLM` action to transfer from connected wallet to configured payout wallet.
+- On-chain subscription with native XLM transfer from user to treasury wallet.
+- Live subscription status read (`plan_id`, `expires_at`).
+- Treasury wallet balance visibility in UI.
+- Backend aggregated state endpoint (`/api/state`) including subscription, balance, and recent events.
+- Mobile-responsive UI with sticky action controls on small screens.
+- Local cache hydration for balances and subscription state.
 
-## Subscription Model
+## Subscription Parameters
 
-- Plan: `plan_id = 1`
-- Duration: `3600` seconds (1 hour)
-- Price: `10_000_000` stroops (`1 XLM`)
+- `plan_id`: `1`
+- `duration_seconds`: `3600` (1 hour)
+- `amount`: `10_000_000` stroops (`1 XLM`)
 
-## Environment
+## Prerequisites
 
-Frontend (`apps/frontend/subscription_stellar_frontend/.env`):
+- Node.js 22+
+- Go 1.25+
+- Rust stable toolchain
+- `stellar` CLI configured with a funded `deployer` identity for contract operations
+- Docker (optional, for containerized run)
+
+## Environment Configuration
+
+### Frontend
+
+Path: `apps/frontend/subscription_stellar_frontend/.env`
 
 ```env
-VITE_SUBSCRIPTION_CONTRACT_ID=CBPVGE3CNJUFF46O6VLXZXQO2F35JJN2UO2D2RUSY5WPJUMLBT6KVGQ4
+VITE_SUBSCRIPTION_CONTRACT_ID=CA2VD4N35RGAVDHCK4WXGZUJPS2NCFOT3BRPMCHFQ6SSQXVOFW3LLFFJ
 VITE_PAYMENT_CONTRACT_ID=CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC
+VITE_PAYOUT_ADDRESS=GCEUZVV7XV3UPXKZKIMX2T3VZK6POIKMIOL3XM3XNZWXEK4CVVGNIWD2
 VITE_BACKEND_URL=http://localhost:8080
 ```
 
-Backend:
+### Backend
+
+Path: `infra/docker/.env.backend` (Docker) or shell env vars (local run)
 
 - `SUBSCRIPTION_CONTRACT_ID`
 - `PAYMENT_CONTRACT_ID`
-- `STELLAR_NETWORK` (default `testnet`)
-- `STELLAR_SOURCE` (optional; if empty backend uses the request user as `--source-account` for read calls)
+- `STELLAR_NETWORK` (default: `testnet`)
+- `STELLAR_SOURCE` (optional; if empty, backend falls back to request user for read calls)
 
-Reference file: `infra/env/testnet.env`.
+Reference: `infra/env/testnet.env.example`
 
-## Quick Start
+## Quick Start (Local Development)
 
-1. Frontend deps:
+1. Install frontend dependencies:
 
 ```bash
 cd apps/frontend/subscription_stellar_frontend
 npm install
 ```
 
-2. Frontend env:
+2. Create frontend environment file:
 
 ```bash
-cp .env.example .env
+cp apps/frontend/subscription_stellar_frontend/.env.example apps/frontend/subscription_stellar_frontend/.env
 ```
 
-3. Run backend + frontend:
+3. Run backend and frontend together:
 
 ```bash
 make r
 ```
 
-4. Open `http://localhost:5173`
+4. Open:
 
-## Docker Run (Backend + Frontend)
+- Frontend: `http://localhost:5173`
+- Backend health: `http://localhost:8080/healthz`
 
-The repository now includes Docker files in `infra/docker`.
+## Docker Usage
 
-1. Start with Docker via Makefile:
+Start stack:
 
 ```bash
 make docker-up
 ```
 
-This command auto-creates `infra/docker/.env.backend` from the example if missing.
-
-2. Open:
-
-- Frontend: `http://localhost:5173`
-- Backend health: `http://localhost:8080/healthz`
-
-3. Stop:
+Stop stack:
 
 ```bash
 make docker-down
 ```
 
-Notes:
-- `infra/docker/backend.Dockerfile` installs `stellar` CLI (required by backend runtime calls).
-- Frontend is built as static assets and served via Nginx (`infra/docker/frontend.Dockerfile`).
-- To change contract ids or network values, edit `infra/docker/.env.backend`.
-- Useful commands: `make docker-logs`, `make docker-ps`, `make docker-env`.
+Useful operations:
 
-## Docker Production Override
+- `make docker-logs`
+- `make docker-ps`
+- `make docker-env`
 
-Use the production override for server deployment:
-- Enables stronger restart policy (`always`)
-- Adds backend + frontend healthchecks (from base compose)
-- Exposes only frontend on host port `80`
-- Routes frontend `/api/*` to backend internally via Nginx
-
-Run:
+Production override:
 
 ```bash
 make docker-prod-up
-```
-
-Stop:
-
-```bash
 make docker-prod-down
 ```
 
-## Backend API
+## API Endpoints
 
-- `GET /healthz` -> `{ "ok": true }`
-- `GET /api/state?user=<G...>` -> subscription state, XLM balance in stroops, recent events, observed timestamp, network, contract ids
+- `GET /healthz` returns service health.
+- `GET /api/state?user=<G...>` returns subscription, token/XLM balance in stroops, recent events, observed timestamp, network, and contract IDs.
 
-## Commands
+## Make Commands
 
-- `make r` / `make run-all`: run backend + frontend
-- `make rb`: backend only
-- `make rf`: frontend only
-- `make t`: all tests
-- `make tb`: backend tests
-- `make tf`: frontend tests
-- `make c`: coverage
-- `make cl`: cleanup
+- `make r` or `make run-all`
+- `make rb`
+- `make rf`
+- `make t`
+- `make tb`
+- `make tf`
+- `make c`
+- `make cl`
 
-## CI/CD (GitHub Actions)
+## Testing and Quality
 
-Workflows are defined in `.github/workflows/`.
-
-### CI Workflow (`ci.yml`)
-
-- Trigger: pull requests to any branch.
-- Trigger: pushes to `main`.
-- Backend job (`apps/backend`): `gofmt` check, `go vet`, `go test ./...`.
-- Frontend job (`apps/frontend/subscription_stellar_frontend`): `npm ci`, `npm test -- --run`, `npm run build`.
-- Contracts job (`packages/contracts/subscription`): `cargo fmt --all --check`, `cargo check --workspace`.
-
-### CD Workflow (`cd.yml`)
-
-- Trigger: pushes to `main`.
-- Trigger: pushes of tags matching `v*` (example: `v1.0.0`).
-- Trigger: manual run (`workflow_dispatch`) from the Actions tab.
-- Action: builds and pushes Docker images to GitHub Container Registry (GHCR).
-- Backend image: `ghcr.io/<owner>/subscription-stellar-backend`.
-- Frontend image: `ghcr.io/<owner>/subscription-stellar-frontend`.
-
-### GitHub Repository Settings Required
-
-- Set `Settings` -> `Actions` -> `General` -> Workflow permissions to `Read and write permissions` (required for GHCR push).
-- Add repository variables in `Settings` -> `Secrets and variables` -> `Actions` -> `Variables`.
-- Required variable: `VITE_SUBSCRIPTION_CONTRACT_ID`.
-- Required variable: `VITE_PAYMENT_CONTRACT_ID`.
-- Optional variable: `VITE_BACKEND_URL` (defaults to `/api`).
-
-### How to Run
-
-- Automatic: push code to `main` to run CI and CD.
-- Automatic: push a tag like `v1.0.0` to run CD.
-- Manual: `Actions` -> `CD` -> `Run workflow` -> select branch -> `Run workflow`.
-
-### Verification
-
-- In the `Actions` tab, CI jobs should pass: Backend, Frontend, Contracts.
-- In the `Actions` tab, CD job should pass: `Publish Docker images to GHCR`.
-- In GitHub `Packages`, confirm backend and frontend images are published.
-
-## Testing
-
-Frontend tests (`apps/frontend/subscription_stellar_frontend/tests`):
-
-- `tests/lib/getBalance.test.ts`
-- `tests/lib/sendXLM.test.ts`
-- `tests/contract.client.test.ts`
-- `tests/lib/cache.test.ts`
-
-Run:
+Frontend:
 
 ```bash
 cd apps/frontend/subscription_stellar_frontend
+npm run lint
 npm test -- --run
+npm run build
 ```
 
 Backend:
@@ -217,23 +165,53 @@ Backend:
 ```bash
 cd apps/backend
 go test ./...
+go vet ./...
+```
+
+Contracts:
+
+```bash
+cd packages/contracts/subscription
+cargo fmt --all --check
+cargo check --workspace
 ```
 
 Test evidence screenshot:
 
 ![Frontend and backend tests passing](docs/screenshots/tests-passing-small.svg)
 
-## Contract Workspace
+## CI/CD (GitHub Actions)
 
-- Path: `packages/contracts/subscription`
-- Main subscription contract source:
-- `packages/contracts/subscription/contracts/subscription/src/lib.rs`
+Workflows live in `.github/workflows`.
 
-## Notes
+CI (`ci.yml`):
 
-- App is configured for Stellar Testnet.
-- `PAYMENT_CONTRACT_ID` is the active payment contract (native XLM SAC).
-- `TOKENIZATION_CONTRACT_ID` remains only as legacy fallback compatibility in parts of the codebase.
+- Trigger: pull requests and pushes to `main`.
+- Backend checks: `gofmt`, `go vet`, `go test`.
+- Frontend checks: `npm ci`, `npm test -- --run`, `npm run build`.
+- Contracts checks: `cargo fmt --all --check`, `cargo check --workspace`.
+
+CD (`cd.yml`):
+
+- Trigger: pushes to `main`, pushes to tags matching `v*`, and manual dispatch.
+- Builds and publishes container images to GHCR.
+- Image: `ghcr.io/<owner>/subscription-stellar-backend`
+- Image: `ghcr.io/<owner>/subscription-stellar-frontend`
+
+Required GitHub settings:
+
+- `Settings -> Actions -> General -> Workflow permissions`: `Read and write permissions`
+- `Settings -> Secrets and variables -> Actions -> Variables`: add `VITE_SUBSCRIPTION_CONTRACT_ID`, `VITE_PAYMENT_CONTRACT_ID`, and optional `VITE_BACKEND_URL` (default `/api`).
+
+## Contracts
+
+- Workspace: `packages/contracts/subscription`
+- Subscription contract source: `packages/contracts/subscription/contracts/subscription/src/lib.rs`
+
+Key contract behavior:
+
+- `init(admin, token_contract, treasury)` stores immutable runtime config.
+- `subscribe(user, plan_id, duration_seconds, amount)` transfers `amount` from `user` to `treasury`.
 
 ## Demo
 
