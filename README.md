@@ -63,7 +63,7 @@ Backend:
 - `SUBSCRIPTION_CONTRACT_ID`
 - `PAYMENT_CONTRACT_ID`
 - `STELLAR_NETWORK` (default `testnet`)
-- `STELLAR_SOURCE` (default `deployer`)
+- `STELLAR_SOURCE` (optional; if empty backend uses the request user as `--source-account` for read calls)
 
 Reference file: `infra/env/testnet.env`.
 
@@ -89,6 +89,68 @@ make r
 ```
 
 4. Open `http://localhost:5173`
+
+## Docker Run (Backend + Frontend)
+
+The repository now includes Docker files in `infra/docker`.
+
+1. Create Docker env file:
+
+```bash
+cp infra/docker/.env.backend.example infra/docker/.env.backend
+```
+
+2. Start both services:
+
+```bash
+docker compose -f infra/docker/docker-compose.yml --env-file infra/docker/.env.backend up --build
+```
+
+3. Open:
+
+- Frontend: `http://localhost:5173`
+- Backend health: `http://localhost:8080/healthz`
+
+4. Stop:
+
+```bash
+docker compose -f infra/docker/docker-compose.yml --env-file infra/docker/.env.backend down
+```
+
+Notes:
+- `infra/docker/backend.Dockerfile` installs `stellar` CLI (required by backend runtime calls).
+- Frontend is built as static assets and served via Nginx (`infra/docker/frontend.Dockerfile`).
+- To change contract ids or network values, edit `infra/docker/.env.backend`.
+
+## Docker Production Override
+
+Use the production override for server deployment:
+- Enables stronger restart policy (`always`)
+- Adds backend + frontend healthchecks (from base compose)
+- Exposes only frontend on host port `80`
+- Routes frontend `/api/*` to backend internally via Nginx
+
+Run:
+
+```bash
+FRONTEND_PORT=80 BACKEND_BIND=127.0.0.1:8080 \
+docker compose \
+  -f infra/docker/docker-compose.yml \
+  -f infra/docker/compose.prod.yml \
+  --env-file infra/docker/.env.backend \
+  up -d --build
+```
+
+Stop:
+
+```bash
+FRONTEND_PORT=80 BACKEND_BIND=127.0.0.1:8080 \
+docker compose \
+  -f infra/docker/docker-compose.yml \
+  -f infra/docker/compose.prod.yml \
+  --env-file infra/docker/.env.backend \
+  down
+```
 
 ## Backend API
 

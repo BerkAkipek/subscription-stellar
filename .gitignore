@@ -6,6 +6,8 @@
 !.env.example
 infra/env/*.env
 !infra/env/*.env.example
+infra/docker/.env.backend
+!infra/docker/.env.backend.example
 
 ############################
 # 🟢 GO BACKEND

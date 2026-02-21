@@ -3,6 +3,9 @@
 # ==============================
 BACKEND_DIR=./apps/backend
 FRONTEND_DIR=./apps/frontend/subscription_stellar_frontend
+DOCKER_ENV=infra/docker/.env.backend
+DOCKER_BASE=-f infra/docker/docker-compose.yml --env-file $(DOCKER_ENV)
+DOCKER_PROD=-f infra/docker/docker-compose.yml -f infra/docker/compose.prod.yml --env-file $(DOCKER_ENV)
 
 # ==============================
 # RUN APPLICATION
@@ -77,6 +80,41 @@ cl: clean
 
 
 # ==============================
+# DOCKER
+# ==============================
+
+docker-env:
+	cp -n infra/docker/.env.backend.example $(DOCKER_ENV) || true
+
+docker-up: docker-env
+	docker compose $(DOCKER_BASE) up -d --build
+
+docker-down:
+	docker compose $(DOCKER_BASE) down
+
+docker-logs:
+	docker compose $(DOCKER_BASE) logs -f --tail=200
+
+docker-ps:
+	docker compose $(DOCKER_BASE) ps
+
+docker-prod-up: docker-env
+	FRONTEND_PORT=80 BACKEND_BIND=127.0.0.1:8080 docker compose $(DOCKER_PROD) up -d --build
+
+docker-prod-down:
+	FRONTEND_PORT=80 BACKEND_BIND=127.0.0.1:8080 docker compose $(DOCKER_PROD) down
+
+# aliases
+de: docker-env
+du: docker-up
+dd: docker-down
+dl: docker-logs
+dp: docker-ps
+dpu: docker-prod-up
+dpd: docker-prod-down
+
+
+# ==============================
 # HELP
 # ==============================
 
@@ -99,4 +137,15 @@ help:
 	@echo ""
 	@echo " Cleanup:"
 	@echo "   make clean (cl)"
+	@echo ""
+	@echo " Docker (dev):"
+	@echo "   make docker-env (de)      → create infra/docker/.env.backend if missing"
+	@echo "   make docker-up (du)       → run docker compose in background"
+	@echo "   make docker-down (dd)     → stop dev docker compose stack"
+	@echo "   make docker-logs (dl)     → tail docker compose logs"
+	@echo "   make docker-ps (dp)       → list docker compose services"
+	@echo ""
+	@echo " Docker (prod):"
+	@echo "   make docker-prod-up (dpu) → run prod override stack on :80"
+	@echo "   make docker-prod-down (dpd) → stop prod override stack"
 	@echo ""

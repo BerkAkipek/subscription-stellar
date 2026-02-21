@@ -1,0 +1,45 @@
+name: subscription-stellar
+
+services:
+  backend:
+    build:
+      context: ../..
+      dockerfile: infra/docker/backend.Dockerfile
+      args:
+        STELLAR_CLI_INSTALL_REF: ${STELLAR_CLI_INSTALL_REF:-main}
+    env_file:
+      - ./.env.backend
+    environment:
+      BACKEND_ADDR: :8080
+      STELLAR_NETWORK: ${STELLAR_NETWORK:-testnet}
+      STELLAR_SOURCE: ${STELLAR_SOURCE:-}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    ports:
+      - "${BACKEND_BIND:-8080}:8080"
+
+  frontend:
+    build:
+      context: ../..
+      dockerfile: infra/docker/frontend.Dockerfile
+      args:
+        VITE_SUBSCRIPTION_CONTRACT_ID: ${VITE_SUBSCRIPTION_CONTRACT_ID}
+        VITE_PAYMENT_CONTRACT_ID: ${VITE_PAYMENT_CONTRACT_ID}
+        VITE_BACKEND_URL: ${VITE_BACKEND_URL:-http://localhost:8080}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"

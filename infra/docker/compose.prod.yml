@@ -1,0 +1,13 @@
+services:
+  backend:
+    restart: always
+
+  frontend:
+    build:
+      context: ../..
+      dockerfile: infra/docker/frontend.prod.Dockerfile
+      args:
+        VITE_SUBSCRIPTION_CONTRACT_ID: ${VITE_SUBSCRIPTION_CONTRACT_ID}
+        VITE_PAYMENT_CONTRACT_ID: ${VITE_PAYMENT_CONTRACT_ID}
+        VITE_BACKEND_URL: /api
+    restart: always

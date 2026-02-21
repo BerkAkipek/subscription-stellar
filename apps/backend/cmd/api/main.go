@@ -61,7 +61,7 @@ func stateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	network := envOrDefault("STELLAR_NETWORK", "testnet")
-	source := envOrDefault("STELLAR_SOURCE", "deployer")
+	source := strings.TrimSpace(os.Getenv("STELLAR_SOURCE"))
 	subID := envOrDefault("SUBSCRIPTION_CONTRACT_ID", "subscription")
 	tokenID := envOrDefault("PAYMENT_CONTRACT_ID", envOrDefault("TOKENIZATION_CONTRACT_ID", "tokenization"))
 
@@ -101,16 +101,20 @@ func stateHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func fetchSubscription(ctx context.Context, network, source, contractID, user string) (*subscriptionState, error) {
-	out, err := runStellar(ctx,
+	args := []string{
 		"contract", "invoke",
 		"--network", network,
-		"--source", source,
+	}
+	args = append(args, readSourceArgs(source, user)...)
+	args = append(args,
 		"--id", contractID,
 		"--send=no",
 		"--",
 		"get_subscription",
 		"--user", user,
 	)
+
+	out, err := runStellar(ctx, args...)
 	if err != nil {
 		return nil, fmt.Errorf("fetch subscription: %w", err)
 	}
@@ -141,21 +145,39 @@ func fetchSubscription(ctx context.Context, network, source, contractID, user st
 }
 
 func fetchTokenBalance(ctx context.Context, network, source, contractID, user string) (string, error) {
-	out, err := runStellar(ctx,
+	baseArgs := []string{
 		"contract", "invoke",
 		"--network", network,
-		"--source", source,
+	}
+	baseArgs = append(baseArgs, readSourceArgs(source, user)...)
+	baseArgs = append(baseArgs,
 		"--id", contractID,
 		"--send=no",
-		"--",
-		"balance",
-		"--user", user,
 	)
-	if err != nil {
-		return "", fmt.Errorf("fetch token balance: %w", err)
+
+	var lastErr error
+	paramAttempts := [][]string{
+		{"--id", user},
+		{"--user", user},
+		{"--account", user},
 	}
 
-	return normalizeTokenBalance(out), nil
+	for _, param := range paramAttempts {
+		args := append([]string{}, baseArgs...)
+		args = append(args,
+			"--",
+			"balance",
+			param[0], param[1],
+		)
+
+		out, err := runStellar(ctx, args...)
+		if err == nil {
+			return normalizeTokenBalance(out), nil
+		}
+		lastErr = err
+	}
+
+	return "", fmt.Errorf("fetch token balance: %w", lastErr)
 }
 
 func fetchRecentEvents(ctx context.Context, network, subID, tokenID string) ([]json.RawMessage, error) {
@@ -213,6 +235,16 @@ func runStellar(ctx context.Context, args ...string) (string, error) {
 		return "", errors.New(msg)
 	}
 	return strings.TrimSpace(string(output)), nil
+}
+
+func readSourceArgs(source, user string) []string {
+	if trimmedSource := strings.TrimSpace(source); trimmedSource != "" {
+		return []string{"--source", trimmedSource}
+	}
+	if trimmedUser := strings.TrimSpace(user); trimmedUser != "" {
+		return []string{"--source-account", trimmedUser}
+	}
+	return nil
 }
 
 func toUint64(v any) (uint64, error) {

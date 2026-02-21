@@ -121,3 +121,35 @@ func TestEnvOrDefault(t *testing.T) {
 		t.Fatalf("envOrDefault with blank env = %q, want fallback", got)
 	}
 }
+
+func TestReadSourceArgs(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name   string
+		source string
+		user   string
+		want   []string
+	}{
+		{name: "explicit source", source: "deployer", user: "GABC", want: []string{"--source", "deployer"}},
+		{name: "fallback to source account", source: "", user: "GABC", want: []string{"--source-account", "GABC"}},
+		{name: "trim whitespace", source: "   ", user: "  GABC  ", want: []string{"--source-account", "GABC"}},
+		{name: "no source args", source: "", user: "", want: nil},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			got := readSourceArgs(tc.source, tc.user)
+			if len(got) != len(tc.want) {
+				t.Fatalf("readSourceArgs(%q, %q) len = %d, want %d", tc.source, tc.user, len(got), len(tc.want))
+			}
+			for i := range got {
+				if got[i] != tc.want[i] {
+					t.Fatalf("readSourceArgs(%q, %q)[%d] = %q, want %q", tc.source, tc.user, i, got[i], tc.want[i])
+				}
+			}
+		})
+	}
+}
