@@ -19,27 +19,26 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /out/backend ./cmd/api
 
 FROM debian:bookworm-slim AS runtime
 
-ENV PATH="/root/.local/bin:${PATH}"
 ARG STELLAR_CLI_VERSION=25.1.0
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates curl libdbus-1-3 tar \
+    && apt-get install -y --no-install-recommends ca-certificates curl libdbus-1-3 libudev1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install stellar CLI from a pinned release artifact (no GitHub API call).
+# Install stellar CLI from a pinned Debian package release asset.
 RUN \
     set -eux; \
     arch="$(dpkg --print-architecture)"; \
     case "$arch" in \
-      amd64) target_arch="x86_64" ;; \
-      arm64) target_arch="aarch64" ;; \
+      amd64|arm64) : ;; \
       *) echo "Unsupported architecture: $arch" >&2; exit 1 ;; \
     esac; \
-    archive="stellar-cli-${STELLAR_CLI_VERSION}-${target_arch}-unknown-linux-gnu.tar.gz"; \
-    curl -fsSL "https://github.com/stellar/stellar-cli/releases/download/v${STELLAR_CLI_VERSION}/${archive}" -o /tmp/stellar-cli.tar.gz; \
-    tar -xzf /tmp/stellar-cli.tar.gz -C /tmp; \
-    install -m 0755 /tmp/stellar /root/.local/bin/stellar; \
-    rm -f /tmp/stellar-cli.tar.gz /tmp/stellar
+    deb="stellar-cli_${STELLAR_CLI_VERSION}_${arch}.deb"; \
+    curl --retry 5 --retry-all-errors --retry-delay 2 -fsSL "https://github.com/stellar/stellar-cli/releases/download/v${STELLAR_CLI_VERSION}/${deb}" -o /tmp/stellar-cli.deb; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends /tmp/stellar-cli.deb; \
+    rm -f /tmp/stellar-cli.deb; \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY --from=builder /out/backend /app/backend
