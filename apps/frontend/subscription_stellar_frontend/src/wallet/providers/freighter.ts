@@ -25,6 +25,27 @@ const NETWORK = Networks.TESTNET;
 
 const server = new Horizon.Server(HORIZON_URL);
 
+type FreighterErrorLike = {
+  message?: string;
+};
+
+type HorizonBalanceLike = {
+  asset_type?: string;
+  asset_code?: string;
+  asset_issuer?: string;
+  balance?: string;
+};
+
+function errorMessage(error: unknown): string {
+  if (typeof error === "object" && error !== null) {
+    const maybeError = error as FreighterErrorLike;
+    if (typeof maybeError.message === "string") {
+      return maybeError.message;
+    }
+  }
+  return "Transaction failed";
+}
+
 
 // ==============================
 // 🔌 FREIGHTER PROVIDER
@@ -52,8 +73,8 @@ export const freighterProvider: WalletProvider = {
         network: "testnet",
         walletType: "freighter"
       };
-    } catch (err: any) {
-      if (err?.message?.includes("not installed")) {
+    } catch (err: unknown) {
+      if (errorMessage(err).includes("not installed")) {
         throw new WalletNotInstalledError();
       }
       throw new WalletRejectedError();
@@ -100,18 +121,19 @@ export const freighterProvider: WalletProvider = {
 
     const account = await server.loadAccount(address);
 
-    return account.balances.map((b: any) => {
+    return account.balances.map((balance): Balance => {
+      const b = balance as HorizonBalanceLike;
       if (b.asset_type === "native") {
         return {
           asset: "XLM",
-          amount: b.balance
+          amount: b.balance ?? "0"
         };
       }
 
       return {
-        asset: b.asset_code,
+        asset: b.asset_code ?? "UNKNOWN",
         issuer: b.asset_issuer,
-        amount: b.balance
+        amount: b.balance ?? "0"
       };
     });
   },
@@ -163,11 +185,11 @@ export const freighterProvider: WalletProvider = {
         hash: result.hash,
         status: "success"
       };
-    } catch (e: any) {
+    } catch (e: unknown) {
       return {
         hash: "",
         status: "failed",
-        error: e?.message ?? "Transaction failed"
+        error: errorMessage(e)
       };
     }
   }

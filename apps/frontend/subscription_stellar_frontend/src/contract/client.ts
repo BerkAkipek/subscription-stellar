@@ -34,6 +34,60 @@ if (!PAYMENT_CONTRACT_ID) {
 
 const NETWORK = Networks.TESTNET;
 
+type SimulationEnvelope = {
+  error?: unknown;
+  result?: {
+    error?: unknown;
+    retval?: unknown;
+  };
+  retval?: unknown;
+};
+
+type ScValLike = {
+  switch?: () => { name?: string };
+  value?: () => unknown;
+};
+
+type ScMapEntryLike = {
+  key: () => unknown;
+  val: () => unknown;
+};
+
+function asSimulationEnvelope(value: unknown): SimulationEnvelope {
+  if (typeof value !== "object" || value === null) {
+    return {};
+  }
+  return value as SimulationEnvelope;
+}
+
+function asScValLike(value: unknown): ScValLike | null {
+  if (typeof value !== "object" || value === null) {
+    return null;
+  }
+  return value as ScValLike;
+}
+
+function getScValArm(value: unknown): string | null {
+  const maybeScVal = asScValLike(value);
+  const maybeSwitch = maybeScVal?.switch?.();
+  if (!maybeSwitch || typeof maybeSwitch.name !== "string") {
+    return null;
+  }
+  return maybeSwitch.name;
+}
+
+function getScValValue(value: unknown): unknown {
+  return asScValLike(value)?.value?.();
+}
+
+function isScMapEntryLike(value: unknown): value is ScMapEntryLike {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const maybeEntry = value as Partial<ScMapEntryLike>;
+  return typeof maybeEntry.key === "function" && typeof maybeEntry.val === "function";
+}
+
 function stringifySimulationField(value: unknown): string | null {
   if (value == null) return null;
   if (typeof value === "string") return value;
@@ -55,11 +109,12 @@ function stringifySimulationField(value: unknown): string | null {
   return String(value);
 }
 
-function simulationErrorMessage(sim: any): string | null {
-  const topLevel = stringifySimulationField(sim?.error);
+function simulationErrorMessage(sim: unknown): string | null {
+  const parsed = asSimulationEnvelope(sim);
+  const topLevel = stringifySimulationField(parsed.error);
   if (topLevel) return topLevel;
 
-  const resultLevel = stringifySimulationField(sim?.result?.error);
+  const resultLevel = stringifySimulationField(parsed.result?.error);
   if (resultLevel) return resultLevel;
 
   return null;
@@ -70,20 +125,23 @@ function simulationErrorMessage(sim: any): string | null {
 // DECODER
 // ==============================
 
-function decodeSubscription(val: any) {
-  const arm = val.switch().name;
+function decodeSubscription(val: unknown) {
+  const arm = getScValArm(val);
 
   if (arm === "scvVoid") {
     return null;
   }
 
-  const payload = arm === "scvSome" ? val.value() : val;
-  const map =
-    payload.switch?.().name === "scvMap"
-      ? payload.value()
-      : Array.isArray(payload)
-        ? payload
-        : null;
+  const payload = arm === "scvSome" ? getScValValue(val) : val;
+  let map: ScMapEntryLike[] | null = null;
+  if (getScValArm(payload) === "scvMap") {
+    const entries = getScValValue(payload);
+    if (Array.isArray(entries)) {
+      map = entries.filter(isScMapEntryLike);
+    }
+  } else if (Array.isArray(payload)) {
+    map = payload.filter(isScMapEntryLike);
+  }
 
   if (!map) {
     return null;
@@ -92,12 +150,13 @@ function decodeSubscription(val: any) {
   let plan: string | null = null;
   let expires: string | null = null;
 
-  const scValToString = (scVal: any): string | null => {
+  const scValToString = (scVal: unknown): string | null => {
     try {
-      const scArm = scVal.switch().name;
+      const scArm = getScValArm(scVal);
 
       if (scArm === "scvSymbol" || scArm === "scvString") {
-        return scVal.value().toString();
+        const value = getScValValue(scVal);
+        return value == null ? null : value.toString();
       }
 
       if (
@@ -108,10 +167,12 @@ function decodeSubscription(val: any) {
         scArm === "scvU128" ||
         scArm === "scvI128"
       ) {
-        return scVal.value().toString();
+        const value = getScValValue(scVal);
+        return value == null ? null : value.toString();
       }
 
-      return scVal.value?.()?.toString?.() ?? null;
+      const fallback = getScValValue(scVal);
+      return fallback == null ? null : String(fallback);
     } catch {
       return null;
     }
@@ -222,7 +283,8 @@ export async function getSubscription(userAddress: string) {
 
   const sim = await rpcServer.simulateTransaction(tx);
 
-  const retval = (sim as any).result?.retval ?? (sim as any).retval;
+  const parsed = asSimulationEnvelope(sim);
+  const retval = parsed.result?.retval ?? parsed.retval;
 
   if (!retval) return null;
 
@@ -250,7 +312,8 @@ export async function getTokenBalance(userAddress: string): Promise<string | nul
     .build();
 
   const sim = await rpcServer.simulateTransaction(tx);
-  const retval = (sim as any).result?.retval ?? (sim as any).retval;
+  const parsed = asSimulationEnvelope(sim);
+  const retval = parsed.result?.retval ?? parsed.retval;
 
   if (!retval) return null;
 

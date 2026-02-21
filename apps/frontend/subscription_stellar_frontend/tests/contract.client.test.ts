@@ -121,6 +121,21 @@ function scVal(name: string, value?: unknown) {
   };
 }
 
+type MockScVal = {
+  value: () => unknown;
+};
+
+function asMockScVal(value: unknown): MockScVal | null {
+  if (typeof value !== "object" || value === null) {
+    return null;
+  }
+  const maybeScVal = value as Partial<MockScVal>;
+  if (typeof maybeScVal.value !== "function") {
+    return null;
+  }
+  return maybeScVal as MockScVal;
+}
+
 describe("contract client", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -134,7 +149,13 @@ describe("contract client", () => {
     mockUint64FromString.mockImplementation((v) => `U64_RAW_${v}`);
     mockScvU64.mockImplementation((v) => `U64_${v}`);
     mockNativeToScVal.mockImplementation((v, t) => `SCVAL_${v}_${t.type}`);
-    mockScValToBigInt.mockImplementation((v: any) => BigInt(v.value()));
+    mockScValToBigInt.mockImplementation((v: unknown) => {
+      const scValLike = asMockScVal(v);
+      if (!scValLike) {
+        throw new Error("invalid mock scval");
+      }
+      return BigInt(scValLike.value());
+    });
 
     mockRpcServer.getAccount.mockResolvedValue({ id: "ACCOUNT" });
     mockRpcServer.prepareTransaction.mockResolvedValue({

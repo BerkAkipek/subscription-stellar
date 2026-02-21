@@ -5,6 +5,7 @@ import { sendXLM } from "./lib/sendXLM";
 import { subscribe, getSubscription, getTokenBalance } from "@/contract/client";
 import { getCached, removeCached, setCached } from "@/lib/cache";
 import { formatXlmFromStroops } from "@/lib/formatXlm";
+import { resolvePayoutAddress } from "@/lib/payout";
 import "./App.css";
 
 type AsyncStatus = "idle" | "loading" | "success" | "error";
@@ -23,6 +24,7 @@ const STROOPS_PER_XLM = 10_000_000n;
 const SUBSCRIPTION_PAYMENT_XLM = 1n;
 const SUBSCRIPTION_PAYMENT_AMOUNT = Number(SUBSCRIPTION_PAYMENT_XLM * STROOPS_PER_XLM);
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? "http://localhost:8080";
+const PAYOUT_ADDRESS = resolvePayoutAddress(import.meta.env.VITE_PAYOUT_ADDRESS);
 
 function balanceCacheKey(address: string) {
   return `cache:balances:${address}`;
@@ -143,7 +145,7 @@ function App() {
 
       const hash = await sendXLM(
         publicKey,
-        publicKey,
+        PAYOUT_ADDRESS,
         "1"
       );
 
@@ -385,7 +387,7 @@ function App() {
                   onClick={handleSend}
                   disabled={sending || loading || subscribing}
                 >
-                  {sending ? "Sending..." : "Send 1 XLM to myself"}
+                  {sending ? "Sending..." : "Send 1 XLM to payout wallet"}
                 </button>
                 <button
                   className="btn btn-primary"
@@ -443,6 +445,7 @@ function App() {
 
           <section className="card">
             <h2>System</h2>
+            <p className="muted">Payout wallet: {formatAddress(PAYOUT_ADDRESS)}</p>
             {!backendState && <p className="muted">No backend state yet</p>}
             {backendState && (
               <p>
