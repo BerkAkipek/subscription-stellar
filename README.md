@@ -155,6 +155,25 @@ make docker-prod-down
 - `make c`: coverage
 - `make cl`: cleanup
 
+## CI/CD (GitHub Actions)
+
+The repo includes two workflows under `.github/workflows`:
+
+- `ci.yml`: runs on pull requests and pushes to `main`
+- Backend checks: `gofmt`, `go vet`, `go test`
+- Frontend checks: `npm ci`, `npm test -- --run`, `npm run build`
+- Contracts checks: `cargo fmt --check`, `cargo check --workspace`
+- `cd.yml`: runs on pushes to `main`, `v*` tags, and manual dispatch
+- CD publishes:
+- `ghcr.io/<owner>/subscription-stellar-backend`
+- `ghcr.io/<owner>/subscription-stellar-frontend`
+
+Set these repository variables for frontend image build args (Settings -> Secrets and variables -> Actions -> Variables):
+
+- `VITE_SUBSCRIPTION_CONTRACT_ID`
+- `VITE_PAYMENT_CONTRACT_ID`
+- `VITE_BACKEND_URL` (optional, defaults to `/api`)
+
 ## Testing
 
 Frontend tests (`apps/frontend/subscription_stellar_frontend/tests`):
